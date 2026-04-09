@@ -6,257 +6,107 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="운동 루틴"/>
-<title>💪 운동 루틴</title>
+<title>운동 루틴</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-:root {
-  --purple: #7c6ee6; --purple-light: #f0edff; --purple-dark: #5c4fc0;
-  --safe-top: env(safe-area-inset-top); --safe-bot: env(safe-area-inset-bottom);
-}
-html { height: 100%; overflow-x: hidden; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f2f2f7;
-  min-height: 100%;
-  padding-top: var(--safe-top);
-  padding-bottom: calc(90px + var(--safe-bot));
-  -webkit-text-size-adjust: 100%;
-  overflow-x: hidden;
-  width: 100%;
-}
-#app { max-width: 390px; margin: 0 auto; padding: 0 0 16px; width: 100%; }
-
-/* 탭바 */
-#tabbar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: #fff;
-  border-top: 0.5px solid #e8e8e8;
-  padding: 10px 14px calc(10px + max(var(--safe-bot), 6px));
-  z-index: 100;
-}
-.tab-seg {
-  background: #f2f2f7; border-radius: 14px;
-  display: flex; padding: 4px; gap: 3px;
-  max-width: 390px; margin: 0 auto;
-}
-.tab-btn {
-  flex: 1; border: none; cursor: pointer;
-  padding: 11px 4px; border-radius: 10px;
-  font-size: 16px; font-weight: 400; color: #888;
-  background: none; transition: all 0.15s;
-  font-family: inherit;
-}
-.tab-btn.active {
-  background: #fff; color: #111; font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-}
-
-/* 헤더 */
-.page-header {
-  padding: 20px 16px 12px;
-  display: flex; align-items: flex-end; justify-content: space-between;
-}
-.page-title { font-size: 28px; font-weight: 800; color: #111; letter-spacing: -0.5px; }
-.page-sub { font-size: 14px; color: #aaa; margin-bottom: 4px; }
-
-/* 카드 */
-.card {
-  background: #fff;
-  border-radius: 18px;
-  margin: 0 16px 10px;
-  overflow: hidden;
-}
-.card-row {
-  padding: 14px 16px;
-  border-bottom: 0.5px solid #f5f5f5;
-  display: flex; align-items: center; gap: 10px;
-}
-.card-row:last-child { border-bottom: none; }
-
-/* 큰 터치 버튼 */
-.btn-primary {
-  display: block; width: calc(100% - 32px); margin: 4px 16px;
-  padding: 17px; border-radius: 16px;
-  background: #111; color: #fff;
-  border: none; font-size: 16px; font-weight: 700;
-  cursor: pointer; text-align: center; letter-spacing: -0.2px;
-  -webkit-appearance: none;
-}
-.btn-primary:active { opacity: 0.75; transform: scale(0.98); }
-
-.btn-secondary {
-  display: block; width: calc(100% - 32px); margin: 0 16px;
-  padding: 15px; border-radius: 16px;
-  background: #f2f2f7; color: #111;
-  border: none; font-size: 16px; font-weight: 600;
-  cursor: pointer; text-align: center;
-}
-.btn-secondary:active { opacity: 0.7; }
-
-/* 숫자 스텝퍼 */
-.stepper {
-  display: inline-flex; align-items: center;
-  background: #f2f2f7; border-radius: 12px; overflow: hidden;
-}
-.stepper-btn {
-  width: 44px; height: 44px; border: none; background: none;
-  font-size: 24px; color: #111; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; font-weight: 300;
-}
-.stepper-btn:active { background: #e5e5ea; }
-.stepper-val {
-  min-width: 56px; text-align: center;
-  font-size: 18px; font-weight: 700; color: #111; padding: 0 4px;
-}
-
-/* 세트 칩 */
-.set-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 7px 13px; border-radius: 99px;
-  background: #f2f2f7; font-size: 14px; color: #333; font-weight: 500;
-  margin: 3px; cursor: pointer; border: none; font-family: inherit;
-}
-.set-chip:active { background: #e5e5ea; }
-
-/* 시트 */
-.sheet-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-  z-index: 200; display: flex; align-items: flex-end;
-}
-.sheet {
-  background: #fff; border-radius: 24px 24px 0 0;
-  width: 100%; padding: 24px 20px calc(24px + var(--safe-bot));
-}
-.sheet-handle {
-  width: 40px; height: 4px; background: #e0e0e0;
-  border-radius: 2px; margin: 0 auto 20px;
-}
-.sheet-title { font-size: 20px; font-weight: 800; margin-bottom: 24px; color: #111; letter-spacing: -0.3px; }
-.sheet-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
-.sheet-label { font-size: 16px; color: #555; font-weight: 500; }
-
-/* 토글 */
-.toggle {
-  width: 52px; height: 32px; border-radius: 16px;
-  background: #e0e0e0; position: relative; transition: background 0.2s; flex-shrink: 0;
-}
-.toggle.on { background: #111; }
-.toggle-knob {
-  position: absolute; top: 4px; left: 4px;
-  width: 24px; height: 24px; border-radius: 12px;
-  background: #fff; transition: left 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-.toggle.on .toggle-knob { left: 24px; }
-
-/* 날짜 선택 */
-.date-seg {
-  display: flex; background: #fff; border-radius: 18px;
-  margin: 0 16px 10px; padding: 4px; gap: 4px;
-}
-.date-seg-btn {
-  flex: 1; padding: 12px; border-radius: 14px; border: none;
-  font-size: 16px; font-weight: 500; cursor: pointer;
-  background: none; color: #999; transition: all 0.15s; font-family: inherit;
-}
-.date-seg-btn.active { background: #111; color: #fff; font-weight: 700; }
-
-/* 운동 카드 */
-.ex-card {
-  background: #fff; border-radius: 18px;
-  margin: 0 16px 10px; padding: 16px;
-}
-.ex-card-header {
-  display: flex; align-items: center; margin-bottom: 12px; gap: 8px;
-}
-.ex-card-name { font-size: 17px; font-weight: 700; flex: 1; color: #111; }
-.btn-icon {
-  width: 38px; height: 38px; border-radius: 12px;
-  border: none; background: #f2f2f7; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0; font-family: inherit;
-}
-.btn-icon:active { background: #e5e5ea; }
-.btn-icon.danger { color: #e53935; }
-.btn-icon.move { color: #888; font-size: 12px; }
-
-/* 선택 시트 */
-.select-sheet { max-height: 55vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.select-option {
-  padding: 17px 4px; border-bottom: 0.5px solid #f5f5f5;
-  font-size: 17px; cursor: pointer; display: block; width: 100%;
-  background: none; border-left: none; border-right: none; border-top: none;
-  text-align: left; font-family: inherit; color: #111;
-}
-.select-option:active { opacity: 0.5; }
-.select-option:last-child { border-bottom: none; }
-
-/* 배지 */
-.saved-badge {
-  font-size: 13px; padding: 5px 12px; border-radius: 99px;
-  background: #f2f2f7; color: #555; font-weight: 600;
-}
-
-/* 섹션 라벨 */
-.section-label {
-  font-size: 12px; font-weight: 700; color: #aaa;
-  padding: 6px 16px 4px; letter-spacing: 0.8px; text-transform: uppercase;
-}
-
-input[type=number] {
-  -webkit-appearance: none; appearance: none;
-  border: none; background: none;
-  font-size: 18px; font-weight: 700;
-  width: 60px; text-align: center; color: #111; font-family: inherit;
-}
-input[type=number]:focus { outline: none; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
+html{height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;min-height:100%;padding-top:var(--safe-top);padding-bottom:calc(90px + var(--safe-bot));-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
+#app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
+#tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:0.5px solid #e8e8e8;padding:10px 14px calc(10px + max(var(--safe-bot),6px));z-index:100}
+.tab-seg{background:#f2f2f7;border-radius:14px;display:flex;padding:4px;gap:3px;max-width:390px;margin:0 auto}
+.tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;border-radius:10px;font-size:16px;font-weight:400;color:#888;background:none;transition:all 0.15s;font-family:inherit}
+.tab-btn.active{background:#fff;color:#111;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+.page-header{padding:20px 16px 12px;display:flex;align-items:flex-end;justify-content:space-between}
+.page-title{font-size:28px;font-weight:800;color:#111;letter-spacing:-0.5px}
+.page-sub{font-size:14px;color:#aaa;margin-bottom:4px}
+.card{background:#fff;border-radius:18px;margin:0 16px 10px;overflow:hidden}
+.card-row{padding:14px 16px;border-bottom:0.5px solid #f5f5f5;display:flex;align-items:center;gap:10px}
+.card-row:last-child{border-bottom:none}
+.btn-primary{display:block;width:calc(100% - 32px);margin:4px 16px;padding:17px;border-radius:16px;background:#111;color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;text-align:center;letter-spacing:-0.2px;-webkit-appearance:none}
+.btn-primary:active{opacity:0.75;transform:scale(0.98)}
+.btn-secondary{display:block;width:calc(100% - 32px);margin:0 16px;padding:15px;border-radius:16px;background:#f2f2f7;color:#111;border:none;font-size:16px;font-weight:600;cursor:pointer;text-align:center}
+.btn-secondary:active{opacity:0.7}
+.stepper{display:inline-flex;align-items:center;background:#f2f2f7;border-radius:12px;overflow:hidden}
+.stepper-btn{width:44px;height:44px;border:none;background:none;font-size:24px;color:#111;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300}
+.stepper-btn:active{background:#e5e5ea}
+.stepper-val{min-width:56px;text-align:center;font-size:18px;font-weight:700;color:#111;padding:0 4px}
+.set-chip{display:inline-flex;align-items:center;gap:4px;padding:7px 13px;border-radius:99px;background:#f2f2f7;font-size:14px;color:#333;font-weight:500;margin:3px;cursor:pointer;border:none;font-family:inherit}
+.set-chip:active{background:#e5e5ea}
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;display:flex;align-items:flex-end}
+.sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;padding:24px 20px calc(24px + var(--safe-bot))}
+.sheet-handle{width:40px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 20px}
+.sheet-title{font-size:20px;font-weight:800;margin-bottom:24px;color:#111;letter-spacing:-0.3px}
+.sheet-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.sheet-label{font-size:16px;color:#555;font-weight:500}
+.toggle{width:52px;height:32px;border-radius:16px;background:#e0e0e0;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:#111}
+.toggle-knob{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:12px;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle.on .toggle-knob{left:24px}
+.date-seg{display:flex;background:#fff;border-radius:18px;margin:0 16px 10px;padding:4px;gap:4px}
+.date-seg-btn{flex:1;padding:12px;border-radius:14px;border:none;font-size:16px;font-weight:500;cursor:pointer;background:none;color:#999;transition:all 0.15s;font-family:inherit}
+.date-seg-btn.active{background:#111;color:#fff;font-weight:700}
+.ex-card{background:#fff;border-radius:18px;margin:0 16px 10px;padding:16px;transition:opacity 0.15s}
+.ex-card-header{display:flex;align-items:center;margin-bottom:12px;gap:8px}
+.ex-card-name{font-size:17px;font-weight:700;flex:1;color:#111}
+.btn-icon{width:38px;height:38px;border-radius:12px;border:none;background:#f2f2f7;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-family:inherit}
+.btn-icon:active{background:#e5e5ea}
+.btn-icon.danger{color:#e53935}
+.btn-icon.move{color:#888;font-size:12px}
+.drag-handle{display:flex;align-items:center;justify-content:center;width:32px;height:36px;cursor:grab;flex-shrink:0;color:#ccc;font-size:20px;user-select:none;touch-action:none}
+.select-sheet{max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.select-option{padding:17px 4px;border-bottom:0.5px solid #f5f5f5;font-size:17px;cursor:pointer;display:block;width:100%;background:none;border-left:none;border-right:none;border-top:none;text-align:left;font-family:inherit;color:#111}
+.select-option:active{opacity:0.5}
+.select-option:last-child{border-bottom:none}
+.saved-badge{font-size:13px;padding:5px 12px;border-radius:99px;background:#f2f2f7;color:#555;font-weight:600}
+input[type=number]{-webkit-appearance:none;appearance:none;border:none;background:none;font-size:18px;font-weight:700;width:60px;text-align:center;color:#111;font-family:inherit}
+input[type=number]:focus{outline:none}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="tabbar"></div>
-
 <script>
-const DAYS = ["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
-const DEFAULT_ROUTINE = {
-  "월요일": { name:"휴식", exercises:[] },
-  "화요일": { name:"가슴 + 삼두", exercises:[
-    {name:"Chest Press",   sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Pec Deck",      sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Arm Extension", sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Crunch",        sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
-    {name:"런닝머신",       sets:[{w:0,r:0,min:20}]},
+const DAYS=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
+const DEFAULT_ROUTINE={
+  "월요일":{name:"휴식",exercises:[]},
+  "화요일":{name:"가슴 + 삼두",exercises:[
+    {name:"Chest Press",sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
+    {name:"Pec Deck",sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
+    {name:"Arm Extension",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
+    {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
+    {name:"런닝머신",sets:[{w:0,r:0,min:20}]},
   ]},
-  "수요일": { name:"하체", exercises:[
-    {name:"Squat",         sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Leg Curl",      sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
-    {name:"Leg Extension", sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
+  "수요일":{name:"하체",exercises:[
+    {name:"Squat",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
+    {name:"Leg Curl",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
+    {name:"Leg Extension",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
     {name:"Back Extension",sets:[{w:0,r:13},{w:0,r:13},{w:0,r:13}]},
-    {name:"런닝머신",       sets:[{w:0,r:0,min:20}]},
+    {name:"런닝머신",sets:[{w:0,r:0,min:20}]},
   ]},
-  "목요일": { name:"등", exercises:[
-    {name:"Lat Pull Down", sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
-    {name:"Row",           sets:[{w:35,r:13},{w:35,r:13},{w:35,r:13}]},
-    {name:"Arm Curl",      sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Crunch",        sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
-    {name:"런닝머신",       sets:[{w:0,r:0,min:20}]},
+  "목요일":{name:"등",exercises:[
+    {name:"Lat Pull Down",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
+    {name:"Row",sets:[{w:35,r:13},{w:35,r:13},{w:35,r:13}]},
+    {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
+    {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
+    {name:"런닝머신",sets:[{w:0,r:0,min:20}]},
   ]},
-  "금요일": { name:"휴식", exercises:[] },
-  "토요일": { name:"전체", exercises:[
-    {name:"Squat",          sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
-    {name:"Leg Extension",  sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
-    {name:"Chest Press",    sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Rear Delt Row",  sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
-    {name:"Lat Pull Down",  sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
-    {name:"Shoulder Press", sets:[{w:15,r:10},{w:15,r:10},{w:15,r:10}]},
-    {name:"Arm Extension",  sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Arm Curl",       sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Crunch",         sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
+  "금요일":{name:"휴식",exercises:[]},
+  "토요일":{name:"전체",exercises:[
+    {name:"Squat",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
+    {name:"Leg Extension",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
+    {name:"Chest Press",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
+    {name:"Rear Delt Row",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
+    {name:"Lat Pull Down",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
+    {name:"Shoulder Press",sets:[{w:15,r:10},{w:15,r:10},{w:15,r:10}]},
+    {name:"Arm Extension",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
+    {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
+    {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
   ]},
-  "일요일": { name:"휴식", exercises:[] },
+  "일요일":{name:"휴식",exercises:[]},
 };
 
-const RK="workout_routine_v1", LK="workout_logs_v1";
+const RK="workout_routine_v1",LK="workout_logs_v1";
 const loadR=()=>{try{const s=localStorage.getItem(RK);return s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}catch{return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}};
 const loadL=()=>{try{const s=localStorage.getItem(LK);return s?JSON.parse(s):{};}catch{return{};}};
 const saveR=r=>{try{localStorage.setItem(RK,JSON.stringify(r));}catch{}};
@@ -264,495 +114,273 @@ const saveL=l=>{try{localStorage.setItem(LK,JSON.stringify(l));}catch{}};
 const todayKr=()=>DAYS[new Date().getDay()===0?6:new Date().getDay()-1];
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtSet=s=>s.min!=null&&s.min>0?`${s.min}분`:s.w===0?`${s.r}회`:`${s.w}kg×${s.r}회`;
-const DAY_ICON={"월요일":"🌙","화요일":"💪","수요일":"🦵","목요일":"🏋️","금요일":"🌙","토요일":"⚡","일요일":"🌙"};
 
-// ── 상태 ─────────────────────────────────────────────────────────────────────
-let state = {
-  tab: "today",
-  routine: loadR(),
-  logs: loadL(),
-  // 루틴 탭
-  routineOpenDay: null,
-  // 기록 탭
-  logDate: {str:todayStr(), kr:todayKr(), label:"오늘"},
-  logRested: false,
-  logSets: [],
-  logMemo: "",
-  logSaved: false,
-  // 시트
-  sheet: null, // {type, ...}
+const TABS=["today","routine","log","history"];
+let state={
+  tab:"today",
+  routine:loadR(),
+  logs:loadL(),
+  routineOpenDay:null,
+  historyOpen:null,
+  logDate:{str:todayStr(),kr:todayKr(),label:"오늘"},
+  logRested:false,logSets:[],logMemo:"",logSaved:false,
+  sheet:null,
 };
 
 function getPast2(){
   return [0,1].map(i=>{
-    const d=new Date(); d.setDate(d.getDate()-i);
-    return {str:d.toISOString().slice(0,10),kr:DAYS[d.getDay()===0?6:d.getDay()-1],label:i===0?"오늘":"어제"};
+    const d=new Date();d.setDate(d.getDate()-i);
+    return{str:d.toISOString().slice(0,10),kr:DAYS[d.getDay()===0?6:d.getDay()-1],label:i===0?"오늘":"어제"};
   });
 }
-
-function initLogSets(dStr, dayKr){
-  const log = state.logs[dStr];
-  if(log) return {rested:log.rested||false, sets:JSON.parse(JSON.stringify(log.exercises)), memo:log.memo||""};
-  const info = state.routine[dayKr];
-  return {rested:false, sets:(info?.exercises||[]).map(ex=>({...ex,sets:ex.sets.map(s=>({...s}))})), memo:""};
+function initLogSets(dStr,dayKr){
+  const log=state.logs[dStr];
+  if(log)return{rested:log.rested||false,sets:JSON.parse(JSON.stringify(log.exercises)),memo:log.memo||""};
+  const info=state.routine[dayKr];
+  return{rested:false,sets:(info?.exercises||[]).map(ex=>({...ex,sets:ex.sets.map(s=>({...s}))})),memo:""};
 }
 
 // ── 렌더 ─────────────────────────────────────────────────────────────────────
 function render(){
-  const app = document.getElementById("app");
-  const tabbar = document.getElementById("tabbar");
-
-  const tabs = [
-    {id:"today", label:"오늘"},
-    {id:"routine", label:"루틴"},
-    {id:"log", label:"기록"},
-    {id:"history", label:"기록 조회"},
-  ];
-
-  tabbar.innerHTML = `<div class="tab-seg">${
-    tabs.map(t=>`<button class="tab-btn${state.tab===t.id?" active":""}" onclick="setTab('${t.id}')">${t.label}</button>`).join("")
-  }</div>`;
-
-  let html = "";
-  if(state.tab==="today") html = renderToday();
-  else if(state.tab==="routine") html = renderRoutine();
-  else if(state.tab==="log") html = renderLog();
-  else if(state.tab==="history") html = renderHistory();
-
-  if(state.sheet) html += renderSheet();
-  app.innerHTML = html;
+  const tabbar=document.getElementById("tabbar");
+  const tabs=[{id:"today",label:"오늘"},{id:"routine",label:"루틴"},{id:"log",label:"기록"},{id:"history",label:"기록 조회"}];
+  tabbar.innerHTML=`<div class="tab-seg">${tabs.map(t=>`<button class="tab-btn${state.tab===t.id?" active":""}" onclick="setTab('${t.id}')">${t.label}</button>`).join("")}</div>`;
+  const app=document.getElementById("app");
+  let html="";
+  if(state.tab==="today")html=renderToday();
+  else if(state.tab==="routine")html=renderRoutine();
+  else if(state.tab==="log")html=renderLog();
+  else if(state.tab==="history")html=renderHistory();
+  if(state.sheet)html+=renderSheet();
+  app.innerHTML=html;
 }
 
-// ── 오늘 탭 ──────────────────────────────────────────────────────────────────
+// ── 오늘 ─────────────────────────────────────────────────────────────────────
 function renderToday(){
-  const today = todayKr();
-  const info = state.routine[today];
-  const log = state.logs[todayStr()];
-  let exHtml = "";
-  if(!info||info.exercises.length===0){
-    exHtml = `<div style="text-align:center;padding:20px 0;color:#bbb;font-size:15px">🛌 오늘은 휴식일!</div>`;
-  } else {
-    exHtml = info.exercises.map(ex=>`
-      <div class="card-row">
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:600;margin-bottom:4px">${ex.name}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px">
-            ${ex.sets.length===0?`<span style="font-size:13px;color:#aaa">자유</span>`
-              :ex.sets.map(s=>`<span style="font-size:13px;padding:3px 8px;border-radius:99px;background:#f2f2f7;color:#444">${fmtSet(s)}</span>`).join("")}
-          </div>
+  const today=todayKr(),info=state.routine[today],log=state.logs[todayStr()];
+  let exHtml=info?.exercises?.length===0||!info
+    ?`<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">오늘은 휴식일</div>`
+    :info.exercises.map(ex=>`
+      <div class="card-row"><div style="flex:1">
+        <div style="font-size:15px;font-weight:600;color:#111;margin-bottom:5px">${ex.name}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${ex.sets.length===0
+          ?`<span style="font-size:13px;color:#bbb">자유</span>`
+          :ex.sets.map(s=>`<span style="font-size:13px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500">${fmtSet(s)}</span>`).join("")}
         </div>
-      </div>
-    `).join("");
-  }
-  return `
-    <div class="page-header">
-      <div>
-        <div style="font-size:13px;color:#999;margin-bottom:2px">${todayStr()}</div>
-        <div class="page-title">${today}</div>
-      </div>
-      ${log?`<span class="saved-badge">${log.rested?"휴식":"완료"}</span>`:""}
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div style="padding:14px 16px 6px;font-size:13px;color:#888;font-weight:600">${info?.name||"루틴 없음"}</div>
-      ${exHtml}
-    </div>
-    <button class="btn-primary" onclick="setTab('log')">오늘 운동 기록하기</button>
-  `;
+      </div></div>`).join("");
+  return`<div class="page-header"><div><div class="page-sub">${todayStr()}</div><div class="page-title">${today}</div></div>${log?`<span class="saved-badge">${log.rested?"휴식":"완료"}</span>`:""}</div>
+    <div style="padding:0 16px 6px"><div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase">${info?.name||"루틴 없음"}</div></div>
+    <div class="card" style="margin-bottom:16px">${exHtml}</div>
+    <button class="btn-primary" onclick="setTab('log')">오늘 운동 기록하기</button>`;
 }
 
-// ── 루틴 탭 ──────────────────────────────────────────────────────────────────
+// ── 루틴 ─────────────────────────────────────────────────────────────────────
 function renderRoutine(){
-  const today = todayKr();
-  let html = `<div class="page-header"><div class="page-title">루틴 관리</div></div>`;
+  let html=`<div class="page-header"><div class="page-title">루틴 관리</div></div>`;
   for(const day of Object.keys(state.routine)){
-    const info = state.routine[day];
-    const isOpen = state.routineOpenDay===day;
-    const isToday = day===today;
-    let exHtml = "";
+    const info=state.routine[day],isOpen=state.routineOpenDay===day;
+    let body="";
     if(isOpen){
-      exHtml = `<div style="padding:0 16px 14px">`;
+      body=`<div style="padding:0 16px 16px">`;
       if(info.exercises.length===0){
-        exHtml += `<div style="text-align:center;padding:16px 0;color:#bbb;font-size:14px">🛌 휴식일</div>`;
+        body+=`<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식일</div>`;
       } else {
-        exHtml += info.exercises.map((ex,i)=>`
-          <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid #f0f0f0">
+        body+=info.exercises.map((ex,i)=>`
+          <div style="display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:0.5px solid #f5f5f5">
             <div style="display:flex;flex-direction:column;gap:4px">
-              <button class="btn-icon move" onclick="routineMoveEx('${day}',${i},-1)" ${i===0?"disabled style='opacity:0.2'":""}>▲</button>
-              <button class="btn-icon move" onclick="routineMoveEx('${day}',${i},1)" ${i===info.exercises.length-1?"disabled style='opacity:0.2'":""}>▼</button>
+              <button class="btn-icon move" onclick="routineMoveEx('${day}',${i},-1)"${i===0?" disabled style='opacity:0.2'":""}>▲</button>
+              <button class="btn-icon move" onclick="routineMoveEx('${day}',${i},1)"${i===info.exercises.length-1?" disabled style='opacity:0.2'":""}>▼</button>
             </div>
             <div style="flex:1">
-              <div style="font-size:15px;font-weight:600;margin-bottom:5px">${ex.name}</div>
-              <div style="display:flex;flex-wrap:wrap;gap:3px">
-                ${ex.sets.length===0?`<span style="font-size:13px;color:#aaa">자유</span>`:ex.sets.map(s=>`<span class="set-chip" onclick="openRoutineSetSheet('${day}',${i})">${fmtSet(s)}</span>`).join("")}
-                <button class="set-chip" onclick="routineAddSet('${day}',${i})" style="color:var(--purple)">+ 세트</button>
+              <div style="font-size:16px;font-weight:600;color:#111;margin-bottom:6px">${ex.name}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:3px">${ex.sets.length===0
+                ?`<span style="font-size:13px;color:#bbb">자유</span>`
+                :ex.sets.map(s=>`<button class="set-chip" onclick="openRoutineSetSheet('${day}',${i})">${fmtSet(s)}</button>`).join("")}
+                <button class="set-chip" onclick="routineAddSet('${day}',${i})" style="color:#111;font-weight:700">+ 세트</button>
               </div>
             </div>
-            <button class="btn-icon danger" onclick="routineDeleteEx('${day}',${i})">🗑</button>
-          </div>
-        `).join("");
+            <button class="btn-icon danger" onclick="routineDeleteEx('${day}',${i})">✕</button>
+          </div>`).join("");
       }
-      exHtml += `
-        <button class="btn-secondary" style="margin:12px 0 0;width:100%" onclick="openAddExSheet('${day}')">+ 운동 추가</button>
-      </div>`;
+      body+=`<button class="btn-secondary" style="margin:14px 0 0;width:100%" onclick="openAddExSheet('${day}')">+ 운동 추가</button></div>`;
     } else {
-      const chips = info.exercises.length===0
-        ? `<span style="font-size:13px;color:#bbb">휴식</span>`
-        : info.exercises.slice(0,4).map(ex=>`<span style="font-size:12px;padding:3px 8px;border-radius:99px;background:#f2f2f7;color:#555">${ex.name}</span>`).join("")
-          + (info.exercises.length>4?`<span style="font-size:12px;color:#aaa">+${info.exercises.length-4}</span>`:"");
-      exHtml = `<div style="padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">${chips}</div>`;
+      const chips=info.exercises.length===0
+        ?`<span style="font-size:13px;color:#bbb;font-weight:500">휴식</span>`
+        :info.exercises.slice(0,4).map(ex=>`<span style="font-size:13px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500">${ex.name}</span>`).join("")
+          +(info.exercises.length>4?`<span style="font-size:13px;color:#aaa;font-weight:500"> +${info.exercises.length-4}</span>`:"");
+      body=`<div style="padding:0 16px 14px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">${chips}</div>`;
     }
-    html += `
-      <div class="card" style="margin-bottom:10px">
-        <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleRoutineDay('${day}')">
-          <div style="flex:1">
-            <div style="font-size:16px;font-weight:600">${day}</div>
-            <div style="font-size:13px;color:#888">${info.name}</div>
-          </div>
-          <span style="font-size:13px;color:#bbb">${isOpen?"▲":"▼"}</span>
+    html+=`<div class="card" style="margin-bottom:10px">
+      <div style="padding:16px;display:flex;align-items:center;cursor:pointer" onclick="toggleRoutineDay('${day}')">
+        <div style="flex:1">
+          <div style="font-size:17px;font-weight:700;color:#111">${day}</div>
+          <div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">${info.name}</div>
         </div>
-        ${exHtml}
-      </div>`;
+        <span style="font-size:12px;color:#ccc;font-weight:600">${isOpen?"▲":"▼"}</span>
+      </div>${body}</div>`;
   }
   return html;
 }
 
-// ── 기록 탭 ──────────────────────────────────────────────────────────────────
+// ── 기록 ─────────────────────────────────────────────────────────────────────
 function renderLog(){
-  const past2 = getPast2();
-  const {logDate, logRested, logSets, logMemo, logSaved} = state;
-  const routineInfo = state.routine[logDate.kr];
-
-  let exHtml = "";
+  const past2=getPast2(),{logDate,logRested,logSets,logMemo,logSaved}=state;
+  const rInfo=state.routine[logDate.kr];
+  let exHtml="";
   if(!logRested){
     if(logSets.length===0){
-      exHtml = `<div style="text-align:center;padding:24px 0;color:#bbb;font-size:14px">운동을 추가해 주세요</div>`;
+      exHtml=`<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">운동을 추가해 주세요</div>`;
     } else {
-      exHtml = logSets.map((ex,i)=>`
-        <div class="ex-card">
+      exHtml=logSets.map((ex,i)=>`
+        <div class="ex-card" data-drag-idx="${i}" id="excard-${i}">
           <div class="ex-card-header">
-            <div style="display:flex;flex-direction:column;gap:4px;margin-right:4px">
-              <button class="btn-icon move" onclick="logMoveEx(${i},-1)" ${i===0?"disabled style='opacity:0.2'":""}>▲</button>
-              <button class="btn-icon move" onclick="logMoveEx(${i},1)" ${i===logSets.length-1?"disabled style='opacity:0.2'":""}>▼</button>
-            </div>
+            <div class="drag-handle" data-drag-handle="1">⠿</div>
             <span class="ex-card-name">${ex.name}</span>
-            <button class="btn-icon danger" onclick="logRemoveEx(${i})" title="제외">✕</button>
+            <button class="btn-icon danger" onclick="logRemoveEx(${i})">✕</button>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-            ${ex.sets.length===0
-              ?`<span style="font-size:13px;color:#aaa">자유</span>`
-              :ex.sets.map((s,si)=>`<button class="set-chip" onclick="openLogSetSheet(${i},${si})">${fmtSet(s)} ✎</button>`).join("")
-            }
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">${ex.sets.length===0
+            ?`<span style="font-size:13px;color:#bbb">자유</span>`
+            :ex.sets.map((s,si)=>`<button class="set-chip" onclick="openLogSetSheet(${i},${si})">${fmtSet(s)}</button>`).join("")}
           </div>
-          <button class="set-chip" onclick="logAddSet(${i})" style="color:var(--purple);border:1px dashed #c5bdf5">+ 세트</button>
-        </div>
-      `).join("");
+          <button class="set-chip" onclick="logAddSet(${i})" style="color:#111;font-weight:700;border:1.5px dashed #ddd">+ 세트</button>
+        </div>`).join("");
     }
-    exHtml += `<button class="btn-secondary" style="margin-bottom:12px" onclick="openAddExSheet('__log__')">+ 다른 운동 추가</button>`;
+    exHtml+=`<button class="btn-secondary" style="margin-bottom:10px" onclick="openAddExSheet('__log__')">+ 다른 운동 추가</button>`;
   }
-
-  return `
-    <div class="page-header">
-      <div class="page-title">운동 기록</div>
-      ${logSaved?`<span class="saved-badge">저장됨 ✓</span>`:""}
-    </div>
-
-    <div class="date-seg">
-      ${past2.map(d=>`<button class="date-seg-btn${logDate.str===d.str?" active":""}" onclick="logSelectDate('${d.str}','${d.kr}','${d.label}')">${d.label}<br><span style="font-size:12px;opacity:0.8">${d.kr}</span>${state.logs[d.str]?`<span style="margin-left:4px">${state.logs[d.str].rested?"😴":"✓"}</span>`:""}
-      </button>`).join("")}
-    </div>
-
-    <div class="section-header">${logDate.str} · ${routineInfo?.name||"루틴 없음"}</div>
-
-    <div style="display:flex;alignItems:center;gap:10px;padding:14px 16px;background:#fff;border-radius:14px;margin:0 16px 12px;cursor:pointer" onclick="logToggleRest()">
-      <span style="font-size:15px;font-weight:500;color:${logRested?"#f59f00":"#333"}">${logRested?"쉬었어요":"운동했어요"}</span>
-      <div style="margin-left:auto" class="toggle${logRested?" on":""}"><div class="toggle-knob"></div></div>
-    </div>
-
+  return`<div class="page-header"><div><div class="page-sub">${logDate.kr} · ${rInfo?.name||"루틴 없음"}</div><div class="page-title">기록하기</div></div>${logSaved?`<span class="saved-badge">저장됨</span>`:""}</div>
+    <div class="date-seg">${past2.map(d=>`<button class="date-seg-btn${logDate.str===d.str?" active":""}" onclick="logSelectDate('${d.str}','${d.kr}','${d.label}')">${d.label}<br><span style="font-size:12px;opacity:0.7">${d.kr.replace("요일","")}</span>${state.logs[d.str]?` <span style="font-size:11px">${state.logs[d.str].rested?"휴식":"완료"}</span>`:""}</button>`).join("")}</div>
+    <div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="logToggleRest()"><span style="font-size:16px;font-weight:600;color:${logRested?"#888":"#111"}">${logRested?"쉬었어요":"운동했어요"}</span><div class="toggle${logRested?" on":""}"><div class="toggle-knob"></div></div></div></div>
     ${exHtml}
-
-    <div style="padding:0 16px 12px">
-      <textarea placeholder="메모 (선택)" rows="3"
-        style="width:100%;padding:12px;font-size:15px;border:none;border-radius:14px;background:#fff;font-family:inherit;resize:none;color:#333"
-        oninput="logMemoInput(this.value)">${logMemo}</textarea>
-    </div>
-
-    <button class="btn-primary" onclick="logSave()">저장</button>
-  `;
+    <div style="padding:0 16px 10px"><textarea placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111" oninput="logMemoInput(this.value)">${logMemo}</textarea></div>
+    <button class="btn-primary" onclick="logSave()">저장</button>`;
 }
 
-// ── 기록 조회 탭 ─────────────────────────────────────────────────────────────
+// ── 기록 조회 ─────────────────────────────────────────────────────────────────
 function renderHistory(){
-  const dates = Object.keys(state.logs).sort((a,b)=>b.localeCompare(a));
-  let html = `<div class="page-header"><div class="page-title">기록 조회</div></div>`;
-  if(dates.length===0){
-    return html+`<div style="text-align:center;padding:60px 0;color:#bbb;font-size:15px">아직 기록이 없습니다</div>`;
-  }
+  const dates=Object.keys(state.logs).sort((a,b)=>b.localeCompare(a));
+  let html=`<div class="page-header"><div class="page-title">기록 조회</div></div>`;
+  if(!dates.length)return html+`<div style="text-align:center;padding:60px 0;color:#bbb;font-size:15px;font-weight:500">아직 기록이 없습니다</div>`;
   for(const d of dates){
-    const log = state.logs[d];
-    const open = state.historyOpen===d;
-    let detail = "";
+    const log=state.logs[d],open=state.historyOpen===d;
+    let detail="";
     if(open){
-      detail = `<div style="padding:0 16px 14px">`;
-      if(log.rested){
-        detail += `<div style="text-align:center;padding:16px 0;color:#bbb;font-size:14px">😴 쉬었음</div>`;
-      } else {
-        detail += log.exercises.map(ex=>`
-          <div style="padding:10px 0;border-bottom:0.5px solid #f5f5f5">
-            <div style="font-size:15px;font-weight:600;margin-bottom:6px">${ex.name}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${ex.sets.length===0?`<span style="font-size:13px;color:#bbb">자유</span>`:ex.sets.map(s=>`<span style="font-size:13px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#444">${fmtSet(s)}</span>`).join("")}
-            </div>
-          </div>
-        `).join("");
-      }
-      if(log.memo) detail += `<div style="padding:10px 0;font-size:14px;color:#666">📝 ${log.memo}</div>`;
-      detail += `</div>`;
+      detail=`<div style="padding:0 16px 16px;border-top:0.5px solid #f5f5f5">`;
+      if(log.rested)detail+=`<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식</div>`;
+      else detail+=log.exercises.map(ex=>`<div style="padding:12px 0;border-bottom:0.5px solid #f5f5f5"><div style="font-size:15px;font-weight:700;color:#111;margin-bottom:7px">${ex.name}</div><div style="display:flex;flex-wrap:wrap;gap:5px">${ex.sets.length===0?`<span style="font-size:13px;color:#bbb">자유</span>`:ex.sets.map(s=>`<span style="font-size:13px;padding:5px 11px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500">${fmtSet(s)}</span>`).join("")}</div></div>`).join("");
+      if(log.memo)detail+=`<div style="padding:12px 0;font-size:14px;color:#888">${log.memo}</div>`;
+      detail+=`</div>`;
     }
-    html += `
-      <div class="card" style="margin-bottom:10px">
-        <div style="padding:14px 16px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleHistory('${d}')">
-          <div style="flex:1">
-            <div style="font-size:16px;font-weight:600">${d}</div>
-            <div style="font-size:13px;color:#888;margin-top:2px">${log.day}</div>
-          </div>
-          ${log.rested?`<span style="font-size:12px;padding:3px 8px;border-radius:99px;background:#fff8e1;color:#f59f00">휴식</span>`:""}
-          <span style="font-size:13px;color:#bbb">${open?"▲":"▼"}</span>
-        </div>
-        ${detail}
-      </div>`;
+    html+=`<div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;cursor:pointer" onclick="toggleHistory('${d}')"><div style="flex:1"><div style="font-size:17px;font-weight:700;color:#111">${d}</div><div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">${log.day}</div></div>${log.rested?`<span style="font-size:12px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#888;font-weight:600;margin-right:8px">휴식</span>`:""}<span style="font-size:12px;color:#ccc;font-weight:600">${open?"▲":"▼"}</span></div>${detail}</div>`;
   }
   return html;
 }
 
 // ── 시트 ─────────────────────────────────────────────────────────────────────
 function renderSheet(){
-  const s = state.sheet;
-  let inner = "";
+  const s=state.sheet;let inner="";
+  const doneBtn=`<div style="display:flex;gap:10px;margin-top:8px"><button onclick="sheetDeleteSet?sheetDeleteSet():routineSheetDeleteSet()" style="flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer">삭제</button><button onclick="closeSheet()" style="flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer">완료</button></div>`;
 
-  if(s.type==="logSet"){
-    const ex = state.logSets[s.exIdx];
-    const set = ex.sets[s.setIdx];
-    const isMin = set.min!=null;
+  if(s.type==="logSet"||s.type==="routineSet"){
+    const ex=s.type==="logSet"?state.logSets[s.exIdx]:state.routine[s.day].exercises[s.exIdx];
+    const set=ex.sets[s.setIdx],isMin=set.min!=null;
+    const pfx=s.type==="logSet"?"sv":"rv";
+    const stepFn=s.type==="logSet"?"sheetStep":"routineSheetStep";
+    const delFn=s.type==="logSet"?"sheetDeleteSet":"routineSheetDeleteSet";
+    inner=`<div class="sheet-handle"></div><div class="sheet-title">${ex.name} · 세트 ${s.setIdx+1}</div>`;
     if(isMin){
-      inner = `
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">${ex.name} · 세트 ${s.setIdx+1}</div>
-        <div class="sheet-row">
-          <span class="sheet-label">시간</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="stepper">
-              <button class="stepper-btn" onclick="sheetStep('min',-1)">−</button>
-              <div class="stepper-val" id="sv-min">${set.min}</div>
-              <button class="stepper-btn" onclick="sheetStep('min',1)">+</button>
-            </div>
-            <span style="font-size:16px;color:#555;font-weight:500">분</span>
-          </div>
-        </div>`;
+      inner+=`<div class="sheet-row"><span class="sheet-label">시간</span><div style="display:flex;align-items:center;gap:8px"><div class="stepper"><button class="stepper-btn" onclick="${stepFn}('min',-1)">−</button><div class="stepper-val" id="${pfx}-min">${set.min}</div><button class="stepper-btn" onclick="${stepFn}('min',1)">+</button></div><span style="font-size:16px;color:#555;font-weight:500">분</span></div></div>`;
     } else {
-      inner = `
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">${ex.name} · 세트 ${s.setIdx+1}</div>
-        ${set.w>0?`
-        <div class="sheet-row">
-          <span class="sheet-label">중량</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="stepper">
-              <button class="stepper-btn" onclick="sheetStep('w',-2.5)">−</button>
-              <div class="stepper-val" id="sv-w">${set.w}</div>
-              <button class="stepper-btn" onclick="sheetStep('w',2.5)">+</button>
-            </div>
-            <span style="font-size:16px;color:#555;font-weight:500">kg</span>
-          </div>
-        </div>`:""}
-        <div class="sheet-row">
-          <span class="sheet-label">횟수</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="stepper">
-              <button class="stepper-btn" onclick="sheetStep('r',-1)">−</button>
-              <div class="stepper-val" id="sv-r">${set.r}</div>
-              <button class="stepper-btn" onclick="sheetStep('r',1)">+</button>
-            </div>
-            <span style="font-size:16px;color:#555;font-weight:500">회</span>
-          </div>
-        </div>`;
+      if(set.w>0)inner+=`<div class="sheet-row"><span class="sheet-label">중량</span><div style="display:flex;align-items:center;gap:8px"><div class="stepper"><button class="stepper-btn" onclick="${stepFn}('w',-2.5)">−</button><div class="stepper-val" id="${pfx}-w">${set.w}</div><button class="stepper-btn" onclick="${stepFn}('w',2.5)">+</button></div><span style="font-size:16px;color:#555;font-weight:500">kg</span></div></div>`;
+      inner+=`<div class="sheet-row"><span class="sheet-label">횟수</span><div style="display:flex;align-items:center;gap:8px"><div class="stepper"><button class="stepper-btn" onclick="${stepFn}('r',-1)">−</button><div class="stepper-val" id="${pfx}-r">${set.r}</div><button class="stepper-btn" onclick="${stepFn}('r',1)">+</button></div><span style="font-size:16px;color:#555;font-weight:500">회</span></div></div>`;
     }
-    inner += `
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button onclick="sheetDeleteSet()" style="flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer">삭제</button>
-        <button onclick="closeSheet()" style="flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer">완료</button>
-      </div>`;
+    inner+=`<div style="display:flex;gap:10px;margin-top:8px"><button onclick="${delFn}()" style="flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer">삭제</button><button onclick="closeSheet()" style="flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer">완료</button></div>`;
 
   } else if(s.type==="addEx"){
-    const allEx = [...new Set(Object.values(state.routine).flatMap(d=>d.exercises.map(e=>e.name)))];
-    inner = `
-      <div class="sheet-handle"></div>
-      <div class="sheet-title">운동 선택</div>
-      <div class="select-sheet">
-        ${allEx.map(n=>`<button class="select-option" onclick="sheetSelectEx('${n.replace(/'/g,"\\'")}','${s.day}')">${n}</button>`).join("")}
-      </div>`;
-
-  } else if(s.type==="routineSet"){
-    const ex = state.routine[s.day].exercises[s.exIdx];
-    const set = ex.sets[s.setIdx];
-    const isMin = set.min!=null;
-    if(isMin){
-      inner = `
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">${ex.name} · 세트 ${s.setIdx+1}</div>
-        <div class="sheet-row">
-          <span class="sheet-label">시간</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="stepper">
-              <button class="stepper-btn" onclick="routineSheetStep('min',-1)">−</button>
-              <div class="stepper-val" id="rv-min">${set.min}</div>
-              <button class="stepper-btn" onclick="routineSheetStep('min',1)">+</button>
-            </div>
-            <span style="font-size:16px;color:#555;font-weight:500">분</span>
-          </div>
-        </div>`;
-    } else {
-      inner = `
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">${ex.name} · 세트 ${s.setIdx+1}</div>
-        ${set.w>0?`
-        <div class="sheet-row">
-          <span class="sheet-label">중량</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="stepper">
-              <button class="stepper-btn" onclick="routineSheetStep('w',-2.5)">−</button>
-              <div class="stepper-val" id="rv-w">${set.w}</div>
-              <button class="stepper-btn" onclick="routineSheetStep('w',2.5)">+</button>
-            </div>
-            <span style="font-size:16px;color:#555;font-weight:500">kg</span>
-          </div>
-        </div>`:""}
-        <div class="sheet-row">
-          <span class="sheet-label">횟수</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="stepper">
-              <button class="stepper-btn" onclick="routineSheetStep('r',-1)">−</button>
-              <div class="stepper-val" id="rv-r">${set.r}</div>
-              <button class="stepper-btn" onclick="routineSheetStep('r',1)">+</button>
-            </div>
-            <span style="font-size:16px;color:#555;font-weight:500">회</span>
-          </div>
-        </div>`;
-    }
-    inner += `
-      <div style="display:flex;gap:10px;margin-top:8px">
-        <button onclick="routineSheetDeleteSet()" style="flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer">삭제</button>
-        <button onclick="closeSheet()" style="flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer">완료</button>
-      </div>`;
+    const allEx=[...new Set(Object.values(state.routine).flatMap(d=>d.exercises.map(e=>e.name)))];
+    inner=`<div class="sheet-handle"></div><div class="sheet-title">운동 선택</div><div class="select-sheet">${allEx.map(n=>`<button class="select-option" onclick="sheetSelectEx('${n.replace(/'/g,"\\'")}','${s.day}')">${n}</button>`).join("")}</div>`;
   }
-
-  return `<div class="sheet-overlay" onclick="overlayClose(event)">
-    <div class="sheet" onclick="event.stopPropagation()">${inner}</div>
-  </div>`;
+  return`<div class="sheet-overlay" onclick="overlayClose(event)"><div class="sheet" onclick="event.stopPropagation()">${inner}</div></div>`;
 }
 
 // ── 액션 ─────────────────────────────────────────────────────────────────────
-function setTab(t){ state.tab=t; render(); window.scrollTo(0,0); }
-function toggleRoutineDay(day){ state.routineOpenDay=state.routineOpenDay===day?null:day; render(); }
-function toggleHistory(d){ state.historyOpen=state.historyOpen===d?null:d; render(); }
-function overlayClose(e){ if(e.target.classList.contains("sheet-overlay")){closeSheet();} }
-function closeSheet(){ state.sheet=null; render(); }
+function setTab(t){state.tab=t;render();window.scrollTo(0,0);}
+function toggleRoutineDay(day){state.routineOpenDay=state.routineOpenDay===day?null:day;render();}
+function toggleHistory(d){state.historyOpen=state.historyOpen===d?null:d;render();}
+function overlayClose(e){if(e.target.classList.contains("sheet-overlay"))closeSheet();}
+function closeSheet(){state.sheet=null;render();}
 
-// 루틴 액션
 function routineMoveEx(day,i,dir){
-  const exs=[...state.routine[day].exercises]; const j=i+dir;
-  if(j<0||j>=exs.length)return; [exs[i],exs[j]]=[exs[j],exs[i]];
-  state.routine[day].exercises=exs; saveR(state.routine); render();
+  const exs=[...state.routine[day].exercises],j=i+dir;
+  if(j<0||j>=exs.length)return;[exs[i],exs[j]]=[exs[j],exs[i]];
+  state.routine[day].exercises=exs;saveR(state.routine);render();
 }
 function routineDeleteEx(day,i){
   if(!confirm(`"${state.routine[day].exercises[i].name}"을 삭제할까요?`))return;
-  state.routine[day].exercises.splice(i,1); saveR(state.routine); render();
+  state.routine[day].exercises.splice(i,1);saveR(state.routine);render();
 }
 function routineAddSet(day,i){
-  const ex=state.routine[day].exercises[i];
-  const last=ex.sets[ex.sets.length-1]||{w:0,r:10};
-  ex.sets.push({...last}); saveR(state.routine); render();
+  const ex=state.routine[day].exercises[i],last=ex.sets[ex.sets.length-1]||{w:0,r:10};
+  ex.sets.push({...last});saveR(state.routine);render();
 }
 function openRoutineSetSheet(day,exIdx){
-  // open first set for simplicity — let user pick which set
-  state.sheet={type:"routineSet",day,exIdx,setIdx:0};
-  // actually open a set picker first if multiple sets
   const ex=state.routine[day].exercises[exIdx];
+  state.sheet={type:"routineSet",day,exIdx,setIdx:0};
   if(ex.sets.length>1){
-    state.sheet={type:"routineSetPick",day,exIdx};
+    // 첫 번째 세트로 시작
+    state.sheet.setIdx=0;
   }
   render();
 }
-function openAddExSheet(day){ state.sheet={type:"addEx",day}; render(); }
-
+function openAddExSheet(day){state.sheet={type:"addEx",day};render();}
 function routineSheetStep(field,delta){
-  const s=state.sheet;
-  const set=state.routine[s.day].exercises[s.exIdx].sets[s.setIdx];
-  const cur=set[field]||0;
-  const next=Math.max(0,Math.round((cur+delta)*10)/10);
-  set[field]=next;
-  saveR(state.routine);
-  const el=document.getElementById(`rv-${field}`);
-  if(el)el.textContent=next;
+  const s=state.sheet,set=state.routine[s.day].exercises[s.exIdx].sets[s.setIdx];
+  const next=Math.max(0,Math.round((( set[field]||0)+delta)*10)/10);
+  set[field]=next;saveR(state.routine);
+  const el=document.getElementById(`rv-${field}`);if(el)el.textContent=next;
 }
 function routineSheetDeleteSet(){
-  const s=state.sheet;
-  state.routine[s.day].exercises[s.exIdx].sets.splice(s.setIdx,1);
-  saveR(state.routine); state.sheet=null; render();
+  const s=state.sheet;state.routine[s.day].exercises[s.exIdx].sets.splice(s.setIdx,1);
+  saveR(state.routine);state.sheet=null;render();
 }
-
-function sheetSelectEx(name, day){
+function sheetSelectEx(name,day){
+  const exMap={};
+  Object.values(state.routine).forEach(d=>d.exercises.forEach(e=>{if(!exMap[e.name])exMap[e.name]=e.sets;}));
   if(day==="__log__"){
-    const exMap={};
-    Object.values(state.routine).forEach(d=>d.exercises.forEach(e=>{if(!exMap[e.name])exMap[e.name]=e.sets;}));
     const ref=exMap[name];
-    state.logSets.push({name, sets:ref&&ref.length>0?ref.map(s=>({...s})):[{w:0,r:10}]});
+    state.logSets.push({name,sets:ref&&ref.length>0?ref.map(s=>({...s})):[{w:0,r:10}]});
     state.logSaved=false;
   } else {
-    state.routine[day].exercises.push({name, sets:[]});
-    saveR(state.routine);
+    state.routine[day].exercises.push({name,sets:[]});saveR(state.routine);
   }
-  state.sheet=null; render();
+  state.sheet=null;render();
 }
 
-// 기록 액션
 function logSelectDate(str,kr,label){
   state.logDate={str,kr,label};
   const s=initLogSets(str,kr);
-  state.logRested=s.rested; state.logSets=s.sets; state.logMemo=s.memo;
-  state.logSaved=!!state.logs[str]; render();
+  state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
+  state.logSaved=!!state.logs[str];render();
 }
-function logToggleRest(){ state.logRested=!state.logRested; state.logSaved=false; render(); }
-function logMemoInput(v){ state.logMemo=v; state.logSaved=false; }
-function logRemoveEx(i){ state.logSets.splice(i,1); state.logSaved=false; render(); }
-function logMoveEx(i,dir){
-  const a=state.logSets; const j=i+dir;
-  if(j<0||j>=a.length)return; [a[i],a[j]]=[a[j],a[i]]; state.logSaved=false; render();
-}
+function logToggleRest(){state.logRested=!state.logRested;state.logSaved=false;render();}
+function logMemoInput(v){state.logMemo=v;state.logSaved=false;}
+function logRemoveEx(i){state.logSets.splice(i,1);state.logSaved=false;render();}
 function logAddSet(i){
-  const ex=state.logSets[i];
-  const last=ex.sets[ex.sets.length-1]||{w:0,r:10};
-  ex.sets.push({...last}); state.logSaved=false; render();
+  const ex=state.logSets[i],last=ex.sets[ex.sets.length-1]||{w:0,r:10};
+  ex.sets.push({...last});state.logSaved=false;render();
 }
-function openLogSetSheet(exIdx,setIdx){
-  state.sheet={type:"logSet",exIdx,setIdx}; render();
-}
+function openLogSetSheet(exIdx,setIdx){state.sheet={type:"logSet",exIdx,setIdx};render();}
 function sheetStep(field,delta){
-  const s=state.sheet;
-  const set=state.logSets[s.exIdx].sets[s.setIdx];
-  const cur=set[field]||0;
-  const next=Math.max(0,Math.round((cur+delta)*10)/10);
-  set[field]=next;
-  state.logSaved=false;
-  const el=document.getElementById(`sv-${field}`);
-  if(el)el.textContent=next;
+  const s=state.sheet,set=state.logSets[s.exIdx].sets[s.setIdx];
+  const next=Math.max(0,Math.round(((set[field]||0)+delta)*10)/10);
+  set[field]=next;state.logSaved=false;
+  const el=document.getElementById(`sv-${field}`);if(el)el.textContent=next;
 }
 function sheetDeleteSet(){
-  const s=state.sheet;
-  state.logSets[s.exIdx].sets.splice(s.setIdx,1);
-  state.logSaved=false; state.sheet=null; render();
+  const s=state.sheet;state.logSets[s.exIdx].sets.splice(s.setIdx,1);
+  state.logSaved=false;state.sheet=null;render();
 }
 function logSave(){
-  const {logDate,logRested,logSets,logMemo}=state;
+  const{logDate,logRested,logSets,logMemo}=state;
   state.logs[logDate.str]={day:logDate.kr,rested:logRested,exercises:JSON.parse(JSON.stringify(logSets)),memo:logMemo};
   saveL(state.logs);
   if(state.routine[logDate.kr]&&!logRested){
@@ -762,116 +390,95 @@ function logSave(){
     });
     saveR(state.routine);
   }
-  state.logSaved=true; render();
+  state.logSaved=true;render();
 }
 
-// ── 드래그 정렬 (기록 탭) ────────────────────────────────────────────────────
-let drag = null; // {idx, el, ghostEl, startY, lastY, origHeight}
-
+// ── 드래그 정렬 ───────────────────────────────────────────────────────────────
+let drag=null;
 function initDragSort(){
-  const app = document.getElementById("app");
-
-  app.addEventListener("touchstart", e => {
-    const handle = e.target.closest("[data-drag-handle]");
-    if(!handle) return;
-    const card = handle.closest("[data-drag-idx]");
-    if(!card) return;
-
-    const idx = parseInt(card.dataset.dragIdx);
-    const rect = card.getBoundingClientRect();
-    const touch = e.touches[0];
-
-    // 고스트 생성
-    const ghost = card.cloneNode(true);
-    ghost.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.95;z-index:300;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.15);border-radius:18px;transition:none`;
+  const app=document.getElementById("app");
+  app.addEventListener("touchstart",e=>{
+    const handle=e.target.closest("[data-drag-handle]");
+    if(!handle)return;
+    const card=handle.closest("[data-drag-idx]");
+    if(!card)return;
+    const idx=parseInt(card.dataset.dragIdx);
+    const rect=card.getBoundingClientRect();
+    const touch=e.touches[0];
+    const ghost=card.cloneNode(true);
+    ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.95;z-index:300;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.15);border-radius:18px;background:#fff`;
     document.body.appendChild(ghost);
-
-    card.style.opacity = "0.3";
-
-    drag = {idx, card, ghost, startY: touch.clientY, lastY: touch.clientY, origTop: rect.top};
+    card.style.opacity="0.3";
+    drag={idx,card,ghost,startY:touch.clientY,origTop:rect.top};
     e.preventDefault();
-  }, {passive: false});
+  },{passive:false});
 
-  app.addEventListener("touchmove", e => {
-    if(!drag) return;
-    const touch = e.touches[0];
-    const dy = touch.clientY - drag.startY;
-    drag.ghost.style.top = (drag.origTop + dy) + "px";
-    drag.lastY = touch.clientY;
-
-    // 카드 목록에서 현재 위치 파악 → 순서 예고
-    const cards = [...document.querySelectorAll("[data-drag-idx]")];
-    const midY = touch.clientY;
-    let targetIdx = drag.idx;
+  app.addEventListener("touchmove",e=>{
+    if(!drag)return;
+    const touch=e.touches[0];
+    const dy=touch.clientY-drag.startY;
+    drag.ghost.style.top=(drag.origTop+dy)+"px";
+    const cards=[...document.querySelectorAll("[data-drag-idx]")];
+    let targetIdx=drag.idx;
     for(const c of cards){
-      const r = c.getBoundingClientRect();
-      const cIdx = parseInt(c.dataset.dragIdx);
-      if(cIdx === drag.idx) continue;
-      if(midY > r.top && midY < r.bottom) { targetIdx = cIdx; break; }
+      const r=c.getBoundingClientRect(),cIdx=parseInt(c.dataset.dragIdx);
+      if(cIdx===drag.idx)continue;
+      if(touch.clientY>r.top&&touch.clientY<r.bottom){targetIdx=cIdx;break;}
     }
-    if(targetIdx !== drag.idx){
-      const arr = [...state.logSets];
-      const [item] = arr.splice(drag.idx, 1);
-      arr.splice(targetIdx, 0, item);
-      state.logSets = arr;
-      state.logSaved = false;
-      drag.idx = targetIdx;
+    if(targetIdx!==drag.idx){
+      const arr=[...state.logSets];
+      const[item]=arr.splice(drag.idx,1);
+      arr.splice(targetIdx,0,item);
+      state.logSets=arr;state.logSaved=false;
+      const prevIdx=drag.idx;drag.idx=targetIdx;
       render();
-      // 카드 다시 찾아서 연결
-      const newCard = document.querySelector(`[data-drag-idx="${targetIdx}"]`);
-      if(newCard){ drag.card = newCard; newCard.style.opacity = "0.3"; }
+      const newCard=document.querySelector(`[data-drag-idx="${targetIdx}"]`);
+      if(newCard){drag.card=newCard;newCard.style.opacity="0.3";}
     }
     e.preventDefault();
-  }, {passive: false});
+  },{passive:false});
 
-  const endDrag = () => {
-    if(!drag) return;
+  const endDrag=()=>{
+    if(!drag)return;
     drag.ghost.remove();
-    if(drag.card) drag.card.style.opacity = "";
-    drag = null;
-    render();
+    if(drag.card)drag.card.style.opacity="";
+    drag=null;render();
   };
-  app.addEventListener("touchend", endDrag);
-  app.addEventListener("touchcancel", endDrag);
+  app.addEventListener("touchend",endDrag);
+  app.addEventListener("touchcancel",endDrag);
 }
 
-// ── 스와이프 ─────────────────────────────────────────────────────────────────
-(function initSwipe(){
-  const TAB_ORDER = ["today","routine","log","history"];
-  let startX = 0, startY = 0, locked = false;
+// ── 스와이프 탭 전환 ──────────────────────────────────────────────────────────
+function initSwipe(){
+  let startX=0,startY=0,moved=false;
+  document.addEventListener("touchstart",e=>{
+    if(e.target.closest("[data-drag-handle]"))return;
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;moved=false;
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(e.target.closest("[data-drag-handle]"))return;
+    moved=true;
+  },{passive:true});
+  document.addEventListener("touchend",e=>{
+    if(!moved)return;
+    if(e.target.closest("[data-drag-handle]"))return;
+    const dx=e.changedTouches[0].clientX-startX;
+    const dy=e.changedTouches[0].clientY-startY;
+    if(Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*0.7)return;
+    const cur=TABS.indexOf(state.tab);
+    if(dx<0&&cur<TABS.length-1)setTab(TABS[cur+1]);
+    if(dx>0&&cur>0)setTab(TABS[cur-1]);
+  },{passive:true});
+}
 
-  document.addEventListener("touchstart", e => {
-    if(e.target.closest("[data-drag-handle]")) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    locked = false;
-  }, {passive: true});
-
-  document.addEventListener("touchend", e => {
-    if(locked) return;
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    if(Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.8) return;
-    const cur = TAB_ORDER.indexOf(state.tab);
-    if(dx < 0 && cur < TAB_ORDER.length - 1) setTab(TAB_ORDER[cur + 1]);
-    if(dx > 0 && cur > 0) setTab(TAB_ORDER[cur - 1]);
-  }, {passive: true});
-
-  document.addEventListener("touchmove", e => {
-    if(e.target.closest("[data-drag-handle]")) return;
-    const dx = Math.abs(e.touches[0].clientX - startX);
-    const dy = Math.abs(e.touches[0].clientY - startY);
-    if(dy > dx) locked = true;
-  }, {passive: true});
-})();
-
-// ── 초기화 ───────────────────────────────────────────────────────────────────
-(function init(){
-  const s=initLogSets(state.logDate.str, state.logDate.kr);
-  state.logRested=s.rested; state.logSets=s.sets; state.logMemo=s.memo;
+// ── 초기화 ────────────────────────────────────────────────────────────────────
+(function(){
+  const s=initLogSets(state.logDate.str,state.logDate.kr);
+  state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[state.logDate.str];
   render();
   initDragSort();
+  initSwipe();
 })();
 </script>
 </body>
