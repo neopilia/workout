@@ -406,10 +406,10 @@ function initDragSort(){
       const idx=parseInt(card.dataset.dragIdx);
       const rect=card.getBoundingClientRect();
       const ghost=card.cloneNode(true);
-      ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.95;z-index:300;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.15);border-radius:18px;background:#fff`;
+      ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:300;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.18);border-radius:18px;background:#fff;opacity:0.97`;
       document.body.appendChild(ghost);
-      card.style.opacity="0.3";
-      drag={type:"log",idx,card,ghost,startY:e.touches[0].clientY,origTop:rect.top};
+      card.style.visibility="hidden";
+      drag={type:"log",idx,targetIdx:idx,card,ghost,startY:e.touches[0].clientY,origTop:rect.top};
     } else {
       const row=routineHandle.closest("[data-routine-drag-idx]");
       if(!row)return;
@@ -417,10 +417,10 @@ function initDragSort(){
       const idx=parseInt(row.dataset.routineDragIdx);
       const rect=row.getBoundingClientRect();
       const ghost=row.cloneNode(true);
-      ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.95;z-index:300;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.12);background:#fff`;
+      ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:300;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.14);background:#fff;opacity:0.97`;
       document.body.appendChild(ghost);
-      row.style.opacity="0.3";
-      drag={type:"routine",day,idx,row,ghost,startY:e.touches[0].clientY,origTop:rect.top};
+      row.style.visibility="hidden";
+      drag={type:"routine",day,idx,targetIdx:idx,row,ghost,startY:e.touches[0].clientY,origTop:rect.top};
     }
     e.preventDefault();
   },{passive:false});
@@ -431,43 +431,47 @@ function initDragSort(){
     const dy=touch.clientY-drag.startY;
     drag.ghost.style.top=(drag.origTop+dy)+"px";
 
+    // 원본 카드만 시각적으로 위치 표시 — DOM 재생성 없이
     if(drag.type==="log"){
       const cards=[...document.querySelectorAll("[data-drag-idx]")];
-      let targetIdx=drag.idx;
+      // 모든 카드 원래대로
+      cards.forEach(c=>{ c.style.transform=""; c.style.transition="transform 0.15s"; c.style.visibility= parseInt(c.dataset.dragIdx)===drag.idx?"hidden":"visible"; });
+      let newTarget=drag.idx;
       for(const c of cards){
         const r=c.getBoundingClientRect(),cIdx=parseInt(c.dataset.dragIdx);
         if(cIdx===drag.idx)continue;
-        if(touch.clientY>r.top&&touch.clientY<r.bottom){targetIdx=cIdx;break;}
+        if(touch.clientY>r.top&&touch.clientY<r.bottom){newTarget=cIdx;break;}
       }
-      if(targetIdx!==drag.idx){
-        const arr=[...state.logSets];
-        const[item]=arr.splice(drag.idx,1);
-        arr.splice(targetIdx,0,item);
-        state.logSets=arr;state.logSaved=false;
-        drag.idx=targetIdx;
-        render();
-        const newCard=document.querySelector(`[data-drag-idx="${targetIdx}"]`);
-        if(newCard){drag.card=newCard;newCard.style.opacity="0.3";}
-      }
+      drag.targetIdx=newTarget;
+      // 이동 방향에 따라 카드 밀기
+      cards.forEach(c=>{
+        const cIdx=parseInt(c.dataset.dragIdx);
+        if(cIdx===drag.idx)return;
+        if(drag.idx<drag.targetIdx && cIdx>drag.idx && cIdx<=drag.targetIdx)
+          c.style.transform="translateY(-100%) translateY(-10px)";
+        else if(drag.idx>drag.targetIdx && cIdx>=drag.targetIdx && cIdx<drag.idx)
+          c.style.transform="translateY(100%) translateY(10px)";
+        else c.style.transform="";
+      });
     } else {
       const rows=[...document.querySelectorAll(`[data-routine-drag-day="${drag.day}"]`)];
-      let targetIdx=drag.idx;
+      rows.forEach(r=>{ r.style.transform=""; r.style.transition="transform 0.15s"; r.style.visibility= parseInt(r.dataset.routineDragIdx)===drag.idx?"hidden":"visible"; });
+      let newTarget=drag.idx;
       for(const r of rows){
         const rect=r.getBoundingClientRect(),rIdx=parseInt(r.dataset.routineDragIdx);
         if(rIdx===drag.idx)continue;
-        if(touch.clientY>rect.top&&touch.clientY<rect.bottom){targetIdx=rIdx;break;}
+        if(touch.clientY>rect.top&&touch.clientY<rect.bottom){newTarget=rIdx;break;}
       }
-      if(targetIdx!==drag.idx){
-        const exs=[...state.routine[drag.day].exercises];
-        const[item]=exs.splice(drag.idx,1);
-        exs.splice(targetIdx,0,item);
-        state.routine[drag.day].exercises=exs;
-        saveR(state.routine);
-        drag.idx=targetIdx;
-        render();
-        const newRow=document.querySelector(`[data-routine-drag-day="${drag.day}"][data-routine-drag-idx="${targetIdx}"]`);
-        if(newRow){drag.row=newRow;newRow.style.opacity="0.3";}
-      }
+      drag.targetIdx=newTarget;
+      rows.forEach(r=>{
+        const rIdx=parseInt(r.dataset.routineDragIdx);
+        if(rIdx===drag.idx)return;
+        if(drag.idx<drag.targetIdx && rIdx>drag.idx && rIdx<=drag.targetIdx)
+          r.style.transform="translateY(-100%) translateY(-10px)";
+        else if(drag.idx>drag.targetIdx && rIdx>=drag.targetIdx && rIdx<drag.idx)
+          r.style.transform="translateY(100%) translateY(10px)";
+        else r.style.transform="";
+      });
     }
     e.preventDefault();
   },{passive:false});
@@ -475,9 +479,24 @@ function initDragSort(){
   const endDrag=()=>{
     if(!drag)return;
     drag.ghost.remove();
-    const el=drag.card||drag.row;
-    if(el)el.style.opacity="";
-    drag=null;render();
+    // transform 초기화
+    document.querySelectorAll("[data-drag-idx],[data-routine-drag-idx]").forEach(el=>{
+      el.style.transform=""; el.style.transition=""; el.style.visibility="";
+    });
+    // 최종 순서 적용
+    if(drag.type==="log"&&drag.targetIdx!==drag.idx){
+      const arr=[...state.logSets];
+      const[item]=arr.splice(drag.idx,1);
+      arr.splice(drag.targetIdx,0,item);
+      state.logSets=arr; state.logSaved=false;
+    } else if(drag.type==="routine"&&drag.targetIdx!==drag.idx){
+      const exs=[...state.routine[drag.day].exercises];
+      const[item]=exs.splice(drag.idx,1);
+      exs.splice(drag.targetIdx,0,item);
+      state.routine[drag.day].exercises=exs;
+      saveR(state.routine);
+    }
+    drag=null; render();
   };
   app.addEventListener("touchend",endDrag);
   app.addEventListener("touchcancel",endDrag);
