@@ -520,17 +520,19 @@ function initDragSort(){
   app.addEventListener("touchmove",e=>{
     if(!drag)return;
     const ty=e.touches[0].clientY;
-    // 고스트를 손가락 따라 이동 (requestAnimationFrame으로 부드럽게)
     requestAnimationFrame(()=>{
       if(drag)drag.ghost.style.top=(drag.origTop+(ty-drag.startY))+"px";
     });
 
-    // 어떤 아이템 위에 있는지 계산
     const items=getDragItems(drag.type,drag.day);
     let newTarget=drag.targetIdx;
     for(const el of items){
-      const r=el.getBoundingClientRect(),i=getItemIdx(el,drag.type);
-      if(i!==drag.idx&&ty>r.top&&ty<r.bottom){newTarget=i;break;}
+      const i=getItemIdx(el,drag.type);
+      if(i===drag.idx)continue;
+      const r=el.getBoundingClientRect();
+      const mid=r.top+r.height/2;
+      // 카드 중앙 기준 30% 안쪽에 들어왔을 때만 타겟 변경 (데드존)
+      if(ty>mid-r.height*0.3&&ty<mid+r.height*0.3){newTarget=i;break;}
     }
     if(newTarget!==drag.targetIdx){
       drag.targetIdx=newTarget;
