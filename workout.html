@@ -461,6 +461,36 @@ function logSave(){
 
 // ── 드래그 정렬 ───────────────────────────────────────────────────────────────
 let drag=null;
+
+function getDragItems(type,day){
+  return type==="log"
+    ?[...document.querySelectorAll("[data-drag-idx]")]
+    :[...document.querySelectorAll(`[data-routine-drag-day="${day}"]`)];
+}
+function getItemIdx(el,type){
+  return parseInt(type==="log"?el.dataset.dragIdx:el.dataset.routineDragIdx);
+}
+
+// 플레이스홀더: 드래그 중 타겟 위치에 빈 공간 표시
+function updatePlaceholder(targetIdx){
+  if(!drag)return;
+  const items=getDragItems(drag.type,drag.day);
+  items.forEach(el=>{
+    const i=getItemIdx(el,drag.type);
+    // 원본은 투명하게 (자리 유지)
+    el.style.opacity=i===drag.idx?"0":"1";
+    el.style.outline="none";
+    el.style.background="";
+  });
+  // 타겟에 파란 테두리로 삽입 위치 표시
+  const targetEl=items.find(el=>getItemIdx(el,drag.type)===targetIdx);
+  if(targetEl&&targetIdx!==drag.idx){
+    if(targetIdx<drag.idx) targetEl.style.outline="3px solid #7c6ee620";
+    else targetEl.style.outline="3px solid #7c6ee620";
+    targetEl.style.borderRadius="18px";
+  }
+}
+
 function initDragSort(){
   const app=document.getElementById("app");
 
@@ -469,65 +499,42 @@ function initDragSort(){
     const routineH=e.target.closest("[data-routine-drag-handle]");
     if(!logH&&!routineH)return;
 
-    if(logH){
-      const card=logH.closest("[data-drag-idx]");if(!card)return;
-      const idx=parseInt(card.dataset.dragIdx);
-      const rect=card.getBoundingClientRect();
-      const ghost=card.cloneNode(true);
-      ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:300;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.18);border-radius:18px;background:#fff;opacity:0.97`;
-      document.body.appendChild(ghost);
-      card.style.visibility="hidden";
-      drag={type:"log",idx,targetIdx:idx,card,ghost,startY:e.touches[0].clientY,origTop:rect.top};
-    } else {
-      const row=routineH.closest("[data-routine-drag-idx]");if(!row)return;
-      const day=row.dataset.routineDragDay,idx=parseInt(row.dataset.routineDragIdx);
-      const rect=row.getBoundingClientRect();
-      const ghost=row.cloneNode(true);
-      ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:300;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.14);background:#fff;opacity:0.97`;
-      document.body.appendChild(ghost);
-      row.style.visibility="hidden";
-      drag={type:"routine",day,idx,targetIdx:idx,row,ghost,startY:e.touches[0].clientY,origTop:rect.top};
-    }
+    const isLog=!!logH;
+    const anchor=isLog?logH.closest("[data-drag-idx]"):routineH.closest("[data-routine-drag-idx]");
+    if(!anchor)return;
+
+    const idx=parseInt(isLog?anchor.dataset.dragIdx:anchor.dataset.routineDragIdx);
+    const day=isLog?null:anchor.dataset.routineDragDay;
+    const rect=anchor.getBoundingClientRect();
+
+    // 고스트: 원본 크기 그대로 손가락 위치에 떠있음
+    const ghost=anchor.cloneNode(true);
+    ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:300;pointer-events:none;border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(0,0,0,0.2);opacity:0.96;transform:scale(1.02)`;
+    document.body.appendChild(ghost);
+
+    anchor.style.opacity="0";
+    drag={type:isLog?"log":"routine",idx,targetIdx:idx,day,ghost,startY:e.touches[0].clientY,origTop:rect.top};
     e.preventDefault();
   },{passive:false});
 
   app.addEventListener("touchmove",e=>{
     if(!drag)return;
-    const touch=e.touches[0];
-    drag.ghost.style.top=(drag.origTop+(touch.clientY-drag.startY))+"px";
+    const ty=e.touches[0].clientY;
+    // 고스트를 손가락 따라 이동 (requestAnimationFrame으로 부드럽게)
+    requestAnimationFrame(()=>{
+      if(drag)drag.ghost.style.top=(drag.origTop+(ty-drag.startY))+"px";
+    });
 
-    if(drag.type==="log"){
-      const cards=[...document.querySelectorAll("[data-drag-idx]")];
-      let newTarget=drag.idx;
-      for(const c of cards){
-        const r=c.getBoundingClientRect(),ci=parseInt(c.dataset.dragIdx);
-        if(ci!==drag.idx&&touch.clientY>r.top&&touch.clientY<r.bottom){newTarget=ci;break;}
-      }
+    // 어떤 아이템 위에 있는지 계산
+    const items=getDragItems(drag.type,drag.day);
+    let newTarget=drag.targetIdx;
+    for(const el of items){
+      const r=el.getBoundingClientRect(),i=getItemIdx(el,drag.type);
+      if(i!==drag.idx&&ty>r.top&&ty<r.bottom){newTarget=i;break;}
+    }
+    if(newTarget!==drag.targetIdx){
       drag.targetIdx=newTarget;
-      cards.forEach(c=>{
-        const ci=parseInt(c.dataset.dragIdx);
-        c.style.transition="transform 0.15s";
-        c.style.visibility=ci===drag.idx?"hidden":"visible";
-        if(ci===drag.idx)return;
-        c.style.transform=(drag.idx<drag.targetIdx&&ci>drag.idx&&ci<=drag.targetIdx)?"translateY(-110%)":
-          (drag.idx>drag.targetIdx&&ci>=drag.targetIdx&&ci<drag.idx)?"translateY(110%)":"";
-      });
-    } else {
-      const rows=[...document.querySelectorAll(`[data-routine-drag-day="${drag.day}"]`)];
-      let newTarget=drag.idx;
-      for(const r of rows){
-        const rect=r.getBoundingClientRect(),ri=parseInt(r.dataset.routineDragIdx);
-        if(ri!==drag.idx&&touch.clientY>rect.top&&touch.clientY<rect.bottom){newTarget=ri;break;}
-      }
-      drag.targetIdx=newTarget;
-      rows.forEach(r=>{
-        const ri=parseInt(r.dataset.routineDragIdx);
-        r.style.transition="transform 0.15s";
-        r.style.visibility=ri===drag.idx?"hidden":"visible";
-        if(ri===drag.idx)return;
-        r.style.transform=(drag.idx<drag.targetIdx&&ri>drag.idx&&ri<=drag.targetIdx)?"translateY(-110%)":
-          (drag.idx>drag.targetIdx&&ri>=drag.targetIdx&&ri<drag.idx)?"translateY(110%)":"";
-      });
+      updatePlaceholder(newTarget);
     }
     e.preventDefault();
   },{passive:false});
@@ -535,17 +542,21 @@ function initDragSort(){
   const endDrag=()=>{
     if(!drag)return;
     drag.ghost.remove();
-    document.querySelectorAll("[data-drag-idx],[data-routine-drag-idx]").forEach(el=>{
-      el.style.transform="";el.style.transition="";el.style.visibility="";
+    // 스타일 초기화
+    getDragItems(drag.type,drag.day).forEach(el=>{
+      el.style.opacity="";el.style.outline="";el.style.background="";
     });
-    if(drag.type==="log"&&drag.targetIdx!==drag.idx){
-      const arr=[...state.logSets];
-      const[item]=arr.splice(drag.idx,1);arr.splice(drag.targetIdx,0,item);
-      state.logSets=arr;state.logSaved=false;
-    } else if(drag.type==="routine"&&drag.targetIdx!==drag.idx){
-      const exs=[...state.routine[drag.day].exercises];
-      const[item]=exs.splice(drag.idx,1);exs.splice(drag.targetIdx,0,item);
-      state.routine[drag.day].exercises=exs;saveR(state.routine);
+    // 순서 적용
+    if(drag.targetIdx!==drag.idx){
+      if(drag.type==="log"){
+        const arr=[...state.logSets];
+        const[item]=arr.splice(drag.idx,1);arr.splice(drag.targetIdx,0,item);
+        state.logSets=arr;state.logSaved=false;
+      } else {
+        const exs=[...state.routine[drag.day].exercises];
+        const[item]=exs.splice(drag.idx,1);exs.splice(drag.targetIdx,0,item);
+        state.routine[drag.day].exercises=exs;saveR(state.routine);
+      }
     }
     drag=null;render();
   };
