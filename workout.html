@@ -266,8 +266,10 @@ function renderLog(){
   if(!logRested){
     exHtml=logSets.length===0
       ?`<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">운동을 추가해 주세요</div>`
-      :logSets.map((ex,i)=>`
-        <div class="ex-card" data-drag-idx="${i}">
+      :logSets.map((ex,i)=>{
+        const inRoutine=!!(state.routine[logDate.kr]?.exercises||[]).find(r=>r.name===ex.name);
+        const synced=state.logRoutineSync&&state.logRoutineSync[ex.name];
+        return`<div class="ex-card" data-drag-idx="${i}">
           <div class="ex-card-header">
             <div class="drag-handle" data-drag-handle="1">⠿</div>
             <span class="ex-card-name">${ex.name}</span>
@@ -277,8 +279,12 @@ function renderLog(){
             ?`<span style="font-size:13px;color:#bbb">자유</span>`
             :ex.sets.map((s,si)=>`<button class="set-chip" onclick="openLogSetSheet(${i},${si})">${fmtSet(s)}</button>`).join("")}
           </div>
-          <button class="set-chip" onclick="logAddSet(${i})" style="color:#111;font-weight:700;border:1.5px dashed #ddd">+ 세트</button>
-        </div>`).join("");
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <button class="set-chip" onclick="logAddSet(${i})" style="color:#111;font-weight:700;border:1.5px dashed #ddd">+ 세트</button>
+            ${inRoutine?`<button onclick="logToggleSync('${ex.name}')" style="font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1.5px solid ${synced?"#111":"#ddd"};background:${synced?"#111":"transparent"};color:${synced?"#fff":"#aaa"};cursor:pointer;font-family:inherit">루틴 반영${synced?" ✓":""}</button>`:""}
+          </div>
+        </div>`;
+      }).join("");
     exHtml+=`<button class="btn-secondary" style="margin-bottom:10px" onclick="openAddExSheet('__log__')">+ 다른 운동 추가</button>`;
   }
   const past2=getPast2();
@@ -301,7 +307,9 @@ function renderLog(){
     <div style="padding:0 16px 10px">
       <textarea placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111" oninput="logMemoInput(this.value)">${logMemo}</textarea>
     </div>
-    <button class="btn-primary" onclick="logSave()">저장</button>`;
+    <div style="display:flex;gap:8px;margin:0 16px 4px">
+      <button class="btn-primary" style="flex:1;margin:4px 0" onclick="logSave()">저장</button>
+    </div>`;
 }
 
 // ── 기록 조회 탭 ──────────────────────────────────────────────────────────────
@@ -381,7 +389,7 @@ function renderSheet(){
 }
 
 // ── 탭 & 공통 액션 ────────────────────────────────────────────────────────────
-function setTab(t){state.tab=t;render();window.scrollTo(0,0);}
+function setTab(t){state.tab=t;state.logRoutineSync=null;render();window.scrollTo(0,0);}
 function toggleRoutineDay(day){state.routineOpenDay=state.routineOpenDay===day?null:day;render();}
 function toggleHistory(d){state.historyOpen=state.historyOpen===d?null:d;render();}
 function overlayClose(e){if(e.target.classList.contains("sheet-overlay"))closeSheet();}
@@ -422,6 +430,7 @@ function selectEx(name,day){
 // ── 기록 액션 ─────────────────────────────────────────────────────────────────
 function logSelectDate(str,kr,label){
   state.logDate={str,kr,label};
+  state.logRoutineSync=null;
   const s=initLogState(str,kr);
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[str];render();
@@ -444,20 +453,43 @@ function sheetDeleteSet(){
   const s=state.sheet;state.logSets[s.exIdx].sets.splice(s.setIdx,1);
   state.logSaved=false;closeSheet();
 }
+function showToast(msg){
+  const t=document.createElement("div");
+  t.textContent=msg;
+  t.style.cssText=`position:fixed;bottom:calc(90px + max(var(--safe-bot),6px) + 12px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s`;
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>t.style.opacity="1");
+  setTimeout(()=>{t.style.opacity="0";setTimeout(()=>t.remove(),200);},2000);
+}
+
 function logSave(){
   const{logDate,logRested,logSets,logMemo}=state;
   state.logs[logDate.str]={day:logDate.kr,rested:logRested,exercises:deepCopy(logSets),memo:logMemo};
   saveL(state.logs);
-  // 루틴에 있는 운동의 세트 정보 자동 업데이트
-  if(state.routine[logDate.kr]&&!logRested){
+  // 루틴반영 체크된 운동만 루틴에 업데이트
+  if(state.logRoutineSync&&state.routine[logDate.kr]&&!logRested){
+    let changed=false;
     state.routine[logDate.kr].exercises=state.routine[logDate.kr].exercises.map(re=>{
-      const lg=logSets.find(ls=>ls.name===re.name);
-      return lg?{...re,sets:deepCopy(lg.sets)}:re;
+      if(state.logRoutineSync[re.name]){
+        const lg=logSets.find(ls=>ls.name===re.name);
+        if(lg){changed=true;return{...re,sets:deepCopy(lg.sets)};}
+      }
+      return re;
     });
-    saveR(state.routine);
+    if(changed)saveR(state.routine);
   }
-  state.logSaved=true;render();
+  state.logRoutineSync=null;
+  state.logSaved=true;
+  render();
+  const label=logDate.label==="오늘"?"오늘":logDate.label;
+  showToast(`${label} 운동이 저장되었습니다`);
 }
+function logToggleSync(name){
+  if(!state.logRoutineSync)state.logRoutineSync={};
+  state.logRoutineSync[name]=!state.logRoutineSync[name];
+  render();
+}
+
 
 // ── 드래그 정렬 ───────────────────────────────────────────────────────────────
 let drag=null;
