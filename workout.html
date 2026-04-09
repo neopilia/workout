@@ -13,52 +13,79 @@
 html{height:100%;overflow-x:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;min-height:100%;padding-top:var(--safe-top);padding-bottom:calc(90px + var(--safe-bot));-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
+
+/* 탭바 */
 #tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:0.5px solid #e8e8e8;padding:10px 14px calc(10px + max(var(--safe-bot),6px));z-index:100}
 .tab-seg{background:#f2f2f7;border-radius:14px;display:flex;padding:4px;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;border-radius:10px;font-size:16px;font-weight:400;color:#888;background:none;transition:all 0.15s;font-family:inherit}
 .tab-btn.active{background:#fff;color:#111;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+
+/* 레이아웃 */
 .page-header{padding:20px 16px 12px;display:flex;align-items:flex-end;justify-content:space-between}
 .page-title{font-size:28px;font-weight:800;color:#111;letter-spacing:-0.5px}
 .page-sub{font-size:14px;color:#aaa;margin-bottom:4px}
 .card{background:#fff;border-radius:18px;margin:0 16px 10px;overflow:hidden}
 .card-row{padding:14px 16px;border-bottom:0.5px solid #f5f5f5;display:flex;align-items:center;gap:10px}
 .card-row:last-child{border-bottom:none}
+
+/* 버튼 */
 .btn-primary{display:block;width:calc(100% - 32px);margin:4px 16px;padding:17px;border-radius:16px;background:#111;color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;text-align:center;letter-spacing:-0.2px;-webkit-appearance:none}
 .btn-primary:active{opacity:0.75;transform:scale(0.98)}
 .btn-secondary{display:block;width:calc(100% - 32px);margin:0 16px;padding:15px;border-radius:16px;background:#f2f2f7;color:#111;border:none;font-size:16px;font-weight:600;cursor:pointer;text-align:center}
 .btn-secondary:active{opacity:0.7}
+.btn-icon{width:38px;height:38px;border-radius:12px;border:none;background:#f2f2f7;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-family:inherit}
+.btn-icon:active{background:#e5e5ea}
+.btn-icon.danger{color:#e53935}
+
+/* 세트 칩 */
+.set-chip{display:inline-flex;align-items:center;padding:7px 13px;border-radius:99px;background:#f2f2f7;font-size:14px;color:#333;font-weight:500;margin:3px;cursor:pointer;border:none;font-family:inherit}
+.set-chip:active{background:#e5e5ea}
+
+/* 스텝퍼 */
 .stepper{display:inline-flex;align-items:center;background:#f2f2f7;border-radius:12px;overflow:hidden}
 .stepper-btn{width:44px;height:44px;border:none;background:none;font-size:24px;color:#111;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300}
 .stepper-btn:active{background:#e5e5ea}
 .stepper-val{min-width:56px;text-align:center;font-size:18px;font-weight:700;color:#111;padding:0 4px}
-.set-chip{display:inline-flex;align-items:center;gap:4px;padding:7px 13px;border-radius:99px;background:#f2f2f7;font-size:14px;color:#333;font-weight:500;margin:3px;cursor:pointer;border:none;font-family:inherit}
-.set-chip:active{background:#e5e5ea}
+
+/* 토글 */
+.toggle{width:52px;height:32px;border-radius:16px;background:#e0e0e0;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:#111}
+.toggle-knob{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:12px;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.toggle.on .toggle-knob{left:24px}
+
+/* 날짜 세그먼트 */
+.date-seg{display:flex;background:#fff;border-radius:18px;margin:0 16px 10px;padding:4px;gap:4px}
+.date-seg-btn{flex:1;padding:12px;border-radius:14px;border:none;font-size:16px;font-weight:500;cursor:pointer;background:none;color:#999;transition:all 0.15s;font-family:inherit}
+.date-seg-btn.active{background:#111;color:#fff;font-weight:700}
+
+/* 기록 운동 카드 */
+.ex-card{background:#fff;border-radius:18px;margin:0 16px 10px;padding:16px}
+.ex-card-header{display:flex;align-items:center;margin-bottom:12px;gap:8px}
+.ex-card-name{font-size:17px;font-weight:700;flex:1;color:#111}
+.drag-handle{display:flex;align-items:center;justify-content:center;width:28px;height:36px;cursor:grab;flex-shrink:0;color:#ccc;font-size:18px;user-select:none;touch-action:none}
+
+/* 바텀 시트 */
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;display:flex;align-items:flex-end}
 .sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;padding:24px 20px calc(24px + var(--safe-bot))}
 .sheet-handle{width:40px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 20px}
 .sheet-title{font-size:20px;font-weight:800;margin-bottom:24px;color:#111;letter-spacing:-0.3px}
 .sheet-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .sheet-label{font-size:16px;color:#555;font-weight:500}
-.toggle{width:52px;height:32px;border-radius:16px;background:#e0e0e0;position:relative;transition:background 0.2s;flex-shrink:0}
-.toggle.on{background:#111}
-.toggle-knob{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:12px;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-.toggle.on .toggle-knob{left:24px}
-.date-seg{display:flex;background:#fff;border-radius:18px;margin:0 16px 10px;padding:4px;gap:4px}
-.date-seg-btn{flex:1;padding:12px;border-radius:14px;border:none;font-size:16px;font-weight:500;cursor:pointer;background:none;color:#999;transition:all 0.15s;font-family:inherit}
-.date-seg-btn.active{background:#111;color:#fff;font-weight:700}
-.ex-card{background:#fff;border-radius:18px;margin:0 16px 10px;padding:16px;transition:opacity 0.15s}
-.ex-card-header{display:flex;align-items:center;margin-bottom:12px;gap:8px}
-.ex-card-name{font-size:17px;font-weight:700;flex:1;color:#111}
-.btn-icon{width:38px;height:38px;border-radius:12px;border:none;background:#f2f2f7;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-family:inherit}
-.btn-icon:active{background:#e5e5ea}
-.btn-icon.danger{color:#e53935}
-.btn-icon.move{color:#888;font-size:12px}
-.drag-handle{display:flex;align-items:center;justify-content:center;width:32px;height:36px;cursor:grab;flex-shrink:0;color:#ccc;font-size:20px;user-select:none;touch-action:none}
-.select-sheet{max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.select-option{padding:17px 4px;border-bottom:0.5px solid #f5f5f5;font-size:17px;cursor:pointer;display:block;width:100%;background:none;border-left:none;border-right:none;border-top:none;text-align:left;font-family:inherit;color:#111}
-.select-option:active{opacity:0.5}
-.select-option:last-child{border-bottom:none}
+.sheet-btns{display:flex;gap:10px;margin-top:8px}
+.sheet-btn-del{flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer}
+.sheet-btn-ok{flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+
+/* 운동 선택 목록 */
+.select-list{max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.select-item{padding:17px 4px;border-bottom:0.5px solid #f5f5f5;font-size:17px;cursor:pointer;display:block;width:100%;background:none;border-left:none;border-right:none;border-top:none;text-align:left;font-family:inherit;color:#111}
+.select-item:active{opacity:0.5}
+.select-item:last-child{border-bottom:none}
+
+/* 기타 */
 .saved-badge{font-size:13px;padding:5px 12px;border-radius:99px;background:#f2f2f7;color:#555;font-weight:600}
+.rest-badge{font-size:12px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#888;font-weight:600;margin-right:8px}
+.chip-label{font-size:13px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500}
+.ver{text-align:center;font-size:11px;color:#ccc;padding:8px 0 4px;letter-spacing:0.5px}
 input[type=number]{-webkit-appearance:none;appearance:none;border:none;background:none;font-size:18px;font-weight:700;width:60px;text-align:center;color:#111;font-family:inherit}
 input[type=number]:focus{outline:none}
 </style>
@@ -67,6 +94,7 @@ input[type=number]:focus{outline:none}
 <div id="app"></div>
 <div id="tabbar"></div>
 <script>
+// ── 상수 & 기본 데이터 ────────────────────────────────────────────────────────
 const DAYS=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
 const DEFAULT_ROUTINE={
   "월요일":{name:"휴식",exercises:[]},
@@ -106,86 +134,95 @@ const DEFAULT_ROUTINE={
   "일요일":{name:"휴식",exercises:[]},
 };
 
-const RK="workout_routine_v1",LK="workout_logs_v1";
+// ── 로컬 스토리지 ─────────────────────────────────────────────────────────────
+const RK="workout_routine_v1", LK="workout_logs_v1";
 const loadR=()=>{try{const s=localStorage.getItem(RK);return s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}catch{return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}};
 const loadL=()=>{try{const s=localStorage.getItem(LK);return s?JSON.parse(s):{};}catch{return{};}};
 const saveR=r=>{try{localStorage.setItem(RK,JSON.stringify(r));}catch{}};
 const saveL=l=>{try{localStorage.setItem(LK,JSON.stringify(l));}catch{}};
+
+// ── 헬퍼 ─────────────────────────────────────────────────────────────────────
 const todayKr=()=>DAYS[new Date().getDay()===0?6:new Date().getDay()-1];
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmtSet=s=>s.min!=null&&s.min>0?`${s.min}분`:s.w===0?`${s.r}회`:`${s.w}kg×${s.r}회`;
+const deepCopy=o=>JSON.parse(JSON.stringify(o));
+const getPast2=()=>[0,1].map(i=>{
+  const d=new Date();d.setDate(d.getDate()-i);
+  return{str:d.toISOString().slice(0,10),kr:DAYS[d.getDay()===0?6:d.getDay()-1],label:i===0?"오늘":"어제"};
+});
+const allExNames=()=>[...new Set(Object.values(state.routine).flatMap(d=>d.exercises.map(e=>e.name)))];
+const exRefSets=name=>{
+  const exMap={};
+  Object.values(state.routine).forEach(d=>d.exercises.forEach(e=>{if(!exMap[e.name])exMap[e.name]=e.sets;}));
+  const ref=exMap[name];
+  return ref&&ref.length>0?ref.map(s=>({...s})):[{w:0,r:10}];
+};
 
-const TABS=["today","routine","log","history"];
-let state={
+// ── 앱 상태 ──────────────────────────────────────────────────────────────────
+const state={
   tab:"today",
   routine:loadR(),
   logs:loadL(),
   routineOpenDay:null,
   historyOpen:null,
   logDate:{str:todayStr(),kr:todayKr(),label:"오늘"},
-  logRested:false,logSets:[],logMemo:"",logSaved:false,
+  logRested:false, logSets:[], logMemo:"", logSaved:false,
   sheet:null,
 };
 
-function getPast2(){
-  return [0,1].map(i=>{
-    const d=new Date();d.setDate(d.getDate()-i);
-    return{str:d.toISOString().slice(0,10),kr:DAYS[d.getDay()===0?6:d.getDay()-1],label:i===0?"오늘":"어제"};
-  });
-}
-function initLogSets(dStr,dayKr){
+function initLogState(dStr,dayKr){
   const log=state.logs[dStr];
-  if(log)return{rested:log.rested||false,sets:JSON.parse(JSON.stringify(log.exercises)),memo:log.memo||""};
+  if(log)return{rested:log.rested||false,sets:deepCopy(log.exercises),memo:log.memo||""};
   const info=state.routine[dayKr];
   return{rested:false,sets:(info?.exercises||[]).map(ex=>({...ex,sets:ex.sets.map(s=>({...s}))})),memo:""};
 }
 
-// ── 렌더 ─────────────────────────────────────────────────────────────────────
+// ── 렌더 진입점 ───────────────────────────────────────────────────────────────
 function render(){
-  const tabbar=document.getElementById("tabbar");
-  const tabs=[{id:"today",label:"오늘"},{id:"routine",label:"루틴"},{id:"log",label:"기록"},{id:"history",label:"기록 조회"}];
-  tabbar.innerHTML=`<div class="tab-seg">${tabs.map(t=>`<button class="tab-btn${state.tab===t.id?" active":""}" onclick="setTab('${t.id}')">${t.label}</button>`).join("")}</div>`;
-  const app=document.getElementById("app");
-  let html="";
-  if(state.tab==="today")html=renderToday();
-  else if(state.tab==="routine")html=renderRoutine();
-  else if(state.tab==="log")html=renderLog();
-  else if(state.tab==="history")html=renderHistory();
-  if(state.sheet)html+=renderSheet();
-  app.innerHTML=html;
+  // 탭바
+  document.getElementById("tabbar").innerHTML=`<div class="tab-seg">${
+    [{id:"today",label:"오늘"},{id:"routine",label:"루틴"},{id:"log",label:"기록"},{id:"history",label:"기록 조회"}]
+    .map(t=>`<button class="tab-btn${state.tab===t.id?" active":""}" onclick="setTab('${t.id}')">${t.label}</button>`).join("")
+  }</div>`;
+  // 본문
+  const pages={today:renderToday,routine:renderRoutine,log:renderLog,history:renderHistory};
+  document.getElementById("app").innerHTML=(pages[state.tab]||renderToday)()+renderSheet();
 }
 
-// ── 오늘 ─────────────────────────────────────────────────────────────────────
+// ── 오늘 탭 ──────────────────────────────────────────────────────────────────
 function renderToday(){
   const today=todayKr(),info=state.routine[today],log=state.logs[todayStr()];
-  let exHtml=info?.exercises?.length===0||!info
+  const exHtml=!info||info.exercises.length===0
     ?`<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">오늘은 휴식일</div>`
-    :info.exercises.map(ex=>`
-      <div class="card-row"><div style="flex:1">
+    :info.exercises.map(ex=>`<div class="card-row"><div style="flex:1">
         <div style="font-size:15px;font-weight:600;color:#111;margin-bottom:5px">${ex.name}</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px">${ex.sets.length===0
           ?`<span style="font-size:13px;color:#bbb">자유</span>`
-          :ex.sets.map(s=>`<span style="font-size:13px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500">${fmtSet(s)}</span>`).join("")}
-        </div>
-      </div></div>`).join("");
-  return`<div class="page-header"><div><div class="page-sub">${todayStr()}</div><div class="page-title">${today}</div></div>${log?`<span class="saved-badge">${log.rested?"휴식":"완료"}</span>`:""}</div>
+          :ex.sets.map(s=>`<span class="chip-label">${fmtSet(s)}</span>`).join("")}
+        </div></div></div>`).join("");
+  return`
+    <div class="page-header">
+      <div><div class="page-sub">${todayStr()}</div><div class="page-title">${today}</div></div>
+      ${log?`<span class="saved-badge">${log.rested?"휴식":"완료"}</span>`:""}
+    </div>
     <div style="padding:0 16px 6px"><div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase">${info?.name||"루틴 없음"}</div></div>
     <div class="card" style="margin-bottom:16px">${exHtml}</div>
-    <button class="btn-primary" onclick="setTab('log')">오늘 운동 기록하기</button>`;
+    <button class="btn-primary" onclick="setTab('log')">오늘 운동 기록하기</button>
+    <div class="ver">v1.0</div>`;
 }
 
-// ── 루틴 ─────────────────────────────────────────────────────────────────────
+// ── 루틴 탭 ──────────────────────────────────────────────────────────────────
 function renderRoutine(){
   let html=`<div class="page-header"><div class="page-title">루틴 관리</div></div>`;
   for(const day of Object.keys(state.routine)){
     const info=state.routine[day],isOpen=state.routineOpenDay===day;
     let body="";
     if(isOpen){
-      body=`<div style="padding:0 16px 16px">`;
+      let rows="";
       if(info.exercises.length===0){
-        body+=`<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식일</div>`;
+        rows=`<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식일</div>`;
       } else {
-        body+=info.exercises.map((ex,i)=>`
+        rows=info.exercises.map((ex,i)=>`
           <div data-routine-drag-day="${day}" data-routine-drag-idx="${i}" style="display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:0.5px solid #f5f5f5">
             <div class="drag-handle" data-routine-drag-handle="1">⠿</div>
             <div style="flex:1">
@@ -199,11 +236,13 @@ function renderRoutine(){
             <button class="btn-icon danger" onclick="routineDeleteEx('${day}',${i})">✕</button>
           </div>`).join("");
       }
-      body+=`<button class="btn-secondary" style="margin:14px 0 0;width:100%" onclick="openAddExSheet('${day}')">+ 운동 추가</button></div>`;
+      body=`<div style="padding:0 16px 16px">${rows}
+        <button class="btn-secondary" style="margin:14px 0 0;width:100%" onclick="openAddExSheet('${day}')">+ 운동 추가</button>
+      </div>`;
     } else {
       const chips=info.exercises.length===0
         ?`<span style="font-size:13px;color:#bbb;font-weight:500">휴식</span>`
-        :info.exercises.slice(0,4).map(ex=>`<span style="font-size:13px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500">${ex.name}</span>`).join("")
+        :info.exercises.slice(0,4).map(ex=>`<span class="chip-label">${ex.name}</span>`).join("")
           +(info.exercises.length>4?`<span style="font-size:13px;color:#aaa;font-weight:500"> +${info.exercises.length-4}</span>`:"");
       body=`<div style="padding:0 16px 14px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">${chips}</div>`;
     }
@@ -219,17 +258,16 @@ function renderRoutine(){
   return html;
 }
 
-// ── 기록 ─────────────────────────────────────────────────────────────────────
+// ── 기록 탭 ──────────────────────────────────────────────────────────────────
 function renderLog(){
-  const past2=getPast2(),{logDate,logRested,logSets,logMemo,logSaved}=state;
+  const {logDate,logRested,logSets,logMemo,logSaved}=state;
   const rInfo=state.routine[logDate.kr];
   let exHtml="";
   if(!logRested){
-    if(logSets.length===0){
-      exHtml=`<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">운동을 추가해 주세요</div>`;
-    } else {
-      exHtml=logSets.map((ex,i)=>`
-        <div class="ex-card" data-drag-idx="${i}" id="excard-${i}">
+    exHtml=logSets.length===0
+      ?`<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">운동을 추가해 주세요</div>`
+      :logSets.map((ex,i)=>`
+        <div class="ex-card" data-drag-idx="${i}">
           <div class="ex-card-header">
             <div class="drag-handle" data-drag-handle="1">⠿</div>
             <span class="ex-card-name">${ex.name}</span>
@@ -241,18 +279,32 @@ function renderLog(){
           </div>
           <button class="set-chip" onclick="logAddSet(${i})" style="color:#111;font-weight:700;border:1.5px dashed #ddd">+ 세트</button>
         </div>`).join("");
-    }
     exHtml+=`<button class="btn-secondary" style="margin-bottom:10px" onclick="openAddExSheet('__log__')">+ 다른 운동 추가</button>`;
   }
-  return`<div class="page-header"><div><div class="page-sub">${logDate.kr} · ${rInfo?.name||"루틴 없음"}</div><div class="page-title">기록하기</div></div>${logSaved?`<span class="saved-badge">저장됨</span>`:""}</div>
-    <div class="date-seg">${past2.map(d=>`<button class="date-seg-btn${logDate.str===d.str?" active":""}" onclick="logSelectDate('${d.str}','${d.kr}','${d.label}')">${d.label}<br><span style="font-size:12px;opacity:0.7">${d.kr.replace("요일","")}</span>${state.logs[d.str]?` <span style="font-size:11px">${state.logs[d.str].rested?"휴식":"완료"}</span>`:""}</button>`).join("")}</div>
-    <div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="logToggleRest()"><span style="font-size:16px;font-weight:600;color:${logRested?"#888":"#111"}">${logRested?"쉬었어요":"운동했어요"}</span><div class="toggle${logRested?" on":""}"><div class="toggle-knob"></div></div></div></div>
+  const past2=getPast2();
+  return`
+    <div class="page-header">
+      <div><div class="page-sub">${logDate.kr} · ${rInfo?.name||"루틴 없음"}</div><div class="page-title">기록하기</div></div>
+      ${logSaved?`<span class="saved-badge">저장됨</span>`:""}
+    </div>
+    <div class="date-seg">${past2.map(d=>`
+      <button class="date-seg-btn${logDate.str===d.str?" active":""}" onclick="logSelectDate('${d.str}','${d.kr}','${d.label}')">
+        ${d.label}<br><span style="font-size:12px;opacity:0.7">${d.kr.replace("요일","")}</span>${state.logs[d.str]?` <span style="font-size:11px">${state.logs[d.str].rested?"휴식":"완료"}</span>`:""}
+      </button>`).join("")}</div>
+    <div class="card" style="margin-bottom:10px">
+      <div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="logToggleRest()">
+        <span style="font-size:16px;font-weight:600;color:${logRested?"#888":"#111"}">${logRested?"쉬었어요":"운동했어요"}</span>
+        <div class="toggle${logRested?" on":""}"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
     ${exHtml}
-    <div style="padding:0 16px 10px"><textarea placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111" oninput="logMemoInput(this.value)">${logMemo}</textarea></div>
+    <div style="padding:0 16px 10px">
+      <textarea placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111" oninput="logMemoInput(this.value)">${logMemo}</textarea>
+    </div>
     <button class="btn-primary" onclick="logSave()">저장</button>`;
 }
 
-// ── 기록 조회 ─────────────────────────────────────────────────────────────────
+// ── 기록 조회 탭 ──────────────────────────────────────────────────────────────
 function renderHistory(){
   const dates=Object.keys(state.logs).sort((a,b)=>b.localeCompare(a));
   let html=`<div class="page-header"><div class="page-title">기록 조회</div></div>`;
@@ -261,56 +313,81 @@ function renderHistory(){
     const log=state.logs[d],open=state.historyOpen===d;
     let detail="";
     if(open){
-      detail=`<div style="padding:0 16px 16px;border-top:0.5px solid #f5f5f5">`;
-      if(log.rested)detail+=`<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식</div>`;
-      else detail+=log.exercises.map(ex=>`<div style="padding:12px 0;border-bottom:0.5px solid #f5f5f5"><div style="font-size:15px;font-weight:700;color:#111;margin-bottom:7px">${ex.name}</div><div style="display:flex;flex-wrap:wrap;gap:5px">${ex.sets.length===0?`<span style="font-size:13px;color:#bbb">자유</span>`:ex.sets.map(s=>`<span style="font-size:13px;padding:5px 11px;border-radius:99px;background:#f2f2f7;color:#444;font-weight:500">${fmtSet(s)}</span>`).join("")}</div></div>`).join("");
-      if(log.memo)detail+=`<div style="padding:12px 0;font-size:14px;color:#888">${log.memo}</div>`;
-      detail+=`</div>`;
+      let rows=log.rested
+        ?`<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식</div>`
+        :log.exercises.map(ex=>`
+          <div style="padding:12px 0;border-bottom:0.5px solid #f5f5f5">
+            <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:7px">${ex.name}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px">${ex.sets.length===0
+              ?`<span style="font-size:13px;color:#bbb">자유</span>`
+              :ex.sets.map(s=>`<span class="chip-label">${fmtSet(s)}</span>`).join("")}
+            </div>
+          </div>`).join("");
+      if(log.memo)rows+=`<div style="padding:12px 0;font-size:14px;color:#888">${log.memo}</div>`;
+      detail=`<div style="padding:0 16px 16px;border-top:0.5px solid #f5f5f5">${rows}</div>`;
     }
-    html+=`<div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;cursor:pointer" onclick="toggleHistory('${d}')"><div style="flex:1"><div style="font-size:17px;font-weight:700;color:#111">${d}</div><div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">${log.day}</div></div>${log.rested?`<span style="font-size:12px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#888;font-weight:600;margin-right:8px">휴식</span>`:""}<span style="font-size:12px;color:#ccc;font-weight:600">${open?"▲":"▼"}</span></div>${detail}</div>`;
+    html+=`<div class="card" style="margin-bottom:10px">
+      <div style="padding:16px;display:flex;align-items:center;cursor:pointer" onclick="toggleHistory('${d}')">
+        <div style="flex:1">
+          <div style="font-size:17px;font-weight:700;color:#111">${d}</div>
+          <div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">${log.day}</div>
+        </div>
+        ${log.rested?`<span class="rest-badge">휴식</span>`:""}
+        <span style="font-size:12px;color:#ccc;font-weight:600">${open?"▲":"▼"}</span>
+      </div>${detail}</div>`;
   }
   return html;
 }
 
-// ── 시트 ─────────────────────────────────────────────────────────────────────
+// ── 바텀 시트 ─────────────────────────────────────────────────────────────────
 function renderSheet(){
-  const s=state.sheet;let inner="";
-  const doneBtn=`<div style="display:flex;gap:10px;margin-top:8px"><button onclick="sheetDeleteSet?sheetDeleteSet():routineSheetDeleteSet()" style="flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer">삭제</button><button onclick="closeSheet()" style="flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer">완료</button></div>`;
+  if(!state.sheet)return"";
+  const s=state.sheet;
+  let inner="";
 
   if(s.type==="logSet"||s.type==="routineSet"){
-    const ex=s.type==="logSet"?state.logSets[s.exIdx]:state.routine[s.day].exercises[s.exIdx];
-    const set=ex.sets[s.setIdx],isMin=set.min!=null;
-    const pfx=s.type==="logSet"?"sv":"rv";
-    const stepFn=s.type==="logSet"?"sheetStep":"routineSheetStep";
-    const delFn=s.type==="logSet"?"sheetDeleteSet":"routineSheetDeleteSet";
+    const isLog=s.type==="logSet";
+    const ex=isLog?state.logSets[s.exIdx]:state.routine[s.day].exercises[s.exIdx];
+    const set=ex.sets[s.setIdx];
+    const pfx=isLog?"sv":"rv";
+    const stepFn=isLog?"sheetStep":"routineSheetStep";
+    const delFn=isLog?"sheetDeleteSet":"routineSheetDeleteSet";
     inner=`<div class="sheet-handle"></div><div class="sheet-title">${ex.name} · 세트 ${s.setIdx+1}</div>`;
-    if(isMin){
-      inner+=`<div class="sheet-row"><span class="sheet-label">시간</span><div style="display:flex;align-items:center;gap:8px"><div class="stepper"><button class="stepper-btn" onclick="${stepFn}('min',-1)">−</button><div class="stepper-val" id="${pfx}-min">${set.min}</div><button class="stepper-btn" onclick="${stepFn}('min',1)">+</button></div><span style="font-size:16px;color:#555;font-weight:500">분</span></div></div>`;
+    if(set.min!=null){
+      inner+=`<div class="sheet-row"><span class="sheet-label">시간</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="stepper"><button class="stepper-btn" onclick="${stepFn}('min',-1)">−</button><div class="stepper-val" id="${pfx}-min">${set.min}</div><button class="stepper-btn" onclick="${stepFn}('min',1)">+</button></div>
+          <span style="font-size:16px;color:#555;font-weight:500">분</span>
+        </div></div>`;
     } else {
-      if(set.w>0)inner+=`<div class="sheet-row"><span class="sheet-label">중량</span><div style="display:flex;align-items:center;gap:8px"><div class="stepper"><button class="stepper-btn" onclick="${stepFn}('w',-2.5)">−</button><div class="stepper-val" id="${pfx}-w">${set.w}</div><button class="stepper-btn" onclick="${stepFn}('w',2.5)">+</button></div><span style="font-size:16px;color:#555;font-weight:500">kg</span></div></div>`;
-      inner+=`<div class="sheet-row"><span class="sheet-label">횟수</span><div style="display:flex;align-items:center;gap:8px"><div class="stepper"><button class="stepper-btn" onclick="${stepFn}('r',-1)">−</button><div class="stepper-val" id="${pfx}-r">${set.r}</div><button class="stepper-btn" onclick="${stepFn}('r',1)">+</button></div><span style="font-size:16px;color:#555;font-weight:500">회</span></div></div>`;
+      if(set.w>0)inner+=`<div class="sheet-row"><span class="sheet-label">중량</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="stepper"><button class="stepper-btn" onclick="${stepFn}('w',-2.5)">−</button><div class="stepper-val" id="${pfx}-w">${set.w}</div><button class="stepper-btn" onclick="${stepFn}('w',2.5)">+</button></div>
+          <span style="font-size:16px;color:#555;font-weight:500">kg</span>
+        </div></div>`;
+      inner+=`<div class="sheet-row"><span class="sheet-label">횟수</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="stepper"><button class="stepper-btn" onclick="${stepFn}('r',-1)">−</button><div class="stepper-val" id="${pfx}-r">${set.r}</div><button class="stepper-btn" onclick="${stepFn}('r',1)">+</button></div>
+          <span style="font-size:16px;color:#555;font-weight:500">회</span>
+        </div></div>`;
     }
-    inner+=`<div style="display:flex;gap:10px;margin-top:8px"><button onclick="${delFn}()" style="flex:1;padding:16px;border-radius:14px;border:none;background:#f5f5f5;color:#e53935;font-size:16px;font-weight:700;cursor:pointer">삭제</button><button onclick="closeSheet()" style="flex:2;padding:16px;border-radius:14px;border:none;background:#111;color:#fff;font-size:16px;font-weight:700;cursor:pointer">완료</button></div>`;
+    inner+=`<div class="sheet-btns"><button class="sheet-btn-del" onclick="${delFn}()">삭제</button><button class="sheet-btn-ok" onclick="closeSheet()">완료</button></div>`;
 
   } else if(s.type==="addEx"){
-    const allEx=[...new Set(Object.values(state.routine).flatMap(d=>d.exercises.map(e=>e.name)))];
-    inner=`<div class="sheet-handle"></div><div class="sheet-title">운동 선택</div><div class="select-sheet">${allEx.map(n=>`<button class="select-option" onclick="sheetSelectEx('${n.replace(/'/g,"\\'")}','${s.day}')">${n}</button>`).join("")}</div>`;
+    inner=`<div class="sheet-handle"></div><div class="sheet-title">운동 선택</div>
+      <div class="select-list">${allExNames().map(n=>`<button class="select-item" onclick="selectEx('${n.replace(/'/g,"\\'")}','${s.day}')">${n}</button>`).join("")}</div>`;
   }
   return`<div class="sheet-overlay" onclick="overlayClose(event)"><div class="sheet" onclick="event.stopPropagation()">${inner}</div></div>`;
 }
 
-// ── 액션 ─────────────────────────────────────────────────────────────────────
+// ── 탭 & 공통 액션 ────────────────────────────────────────────────────────────
 function setTab(t){state.tab=t;render();window.scrollTo(0,0);}
 function toggleRoutineDay(day){state.routineOpenDay=state.routineOpenDay===day?null:day;render();}
 function toggleHistory(d){state.historyOpen=state.historyOpen===d?null:d;render();}
 function overlayClose(e){if(e.target.classList.contains("sheet-overlay"))closeSheet();}
 function closeSheet(){state.sheet=null;render();}
 
-function routineMoveEx(day,i,dir){
-  const exs=[...state.routine[day].exercises],j=i+dir;
-  if(j<0||j>=exs.length)return;[exs[i],exs[j]]=[exs[j],exs[i]];
-  state.routine[day].exercises=exs;saveR(state.routine);render();
-}
+// ── 루틴 액션 ─────────────────────────────────────────────────────────────────
 function routineDeleteEx(day,i){
   if(!confirm(`"${state.routine[day].exercises[i].name}"을 삭제할까요?`))return;
   state.routine[day].exercises.splice(i,1);saveR(state.routine);render();
@@ -320,41 +397,32 @@ function routineAddSet(day,i){
   ex.sets.push({...last});saveR(state.routine);render();
 }
 function openRoutineSetSheet(day,exIdx){
-  const ex=state.routine[day].exercises[exIdx];
-  state.sheet={type:"routineSet",day,exIdx,setIdx:0};
-  if(ex.sets.length>1){
-    // 첫 번째 세트로 시작
-    state.sheet.setIdx=0;
-  }
-  render();
+  state.sheet={type:"routineSet",day,exIdx,setIdx:0};render();
 }
-function openAddExSheet(day){state.sheet={type:"addEx",day};render();}
 function routineSheetStep(field,delta){
   const s=state.sheet,set=state.routine[s.day].exercises[s.exIdx].sets[s.setIdx];
-  const next=Math.max(0,Math.round((( set[field]||0)+delta)*10)/10);
-  set[field]=next;saveR(state.routine);
-  const el=document.getElementById(`rv-${field}`);if(el)el.textContent=next;
+  set[field]=Math.max(0,Math.round(((set[field]||0)+delta)*10)/10);
+  saveR(state.routine);
+  const el=document.getElementById(`rv-${field}`);if(el)el.textContent=set[field];
 }
 function routineSheetDeleteSet(){
   const s=state.sheet;state.routine[s.day].exercises[s.exIdx].sets.splice(s.setIdx,1);
-  saveR(state.routine);state.sheet=null;render();
+  saveR(state.routine);closeSheet();
 }
-function sheetSelectEx(name,day){
-  const exMap={};
-  Object.values(state.routine).forEach(d=>d.exercises.forEach(e=>{if(!exMap[e.name])exMap[e.name]=e.sets;}));
+function openAddExSheet(day){state.sheet={type:"addEx",day};render();}
+function selectEx(name,day){
   if(day==="__log__"){
-    const ref=exMap[name];
-    state.logSets.push({name,sets:ref&&ref.length>0?ref.map(s=>({...s})):[{w:0,r:10}]});
-    state.logSaved=false;
+    state.logSets.push({name,sets:exRefSets(name)});state.logSaved=false;
   } else {
     state.routine[day].exercises.push({name,sets:[]});saveR(state.routine);
   }
-  state.sheet=null;render();
+  closeSheet();
 }
 
+// ── 기록 액션 ─────────────────────────────────────────────────────────────────
 function logSelectDate(str,kr,label){
   state.logDate={str,kr,label};
-  const s=initLogSets(str,kr);
+  const s=initLogState(str,kr);
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[str];render();
 }
@@ -368,41 +436,41 @@ function logAddSet(i){
 function openLogSetSheet(exIdx,setIdx){state.sheet={type:"logSet",exIdx,setIdx};render();}
 function sheetStep(field,delta){
   const s=state.sheet,set=state.logSets[s.exIdx].sets[s.setIdx];
-  const next=Math.max(0,Math.round(((set[field]||0)+delta)*10)/10);
-  set[field]=next;state.logSaved=false;
-  const el=document.getElementById(`sv-${field}`);if(el)el.textContent=next;
+  set[field]=Math.max(0,Math.round(((set[field]||0)+delta)*10)/10);
+  state.logSaved=false;
+  const el=document.getElementById(`sv-${field}`);if(el)el.textContent=set[field];
 }
 function sheetDeleteSet(){
   const s=state.sheet;state.logSets[s.exIdx].sets.splice(s.setIdx,1);
-  state.logSaved=false;state.sheet=null;render();
+  state.logSaved=false;closeSheet();
 }
 function logSave(){
   const{logDate,logRested,logSets,logMemo}=state;
-  state.logs[logDate.str]={day:logDate.kr,rested:logRested,exercises:JSON.parse(JSON.stringify(logSets)),memo:logMemo};
+  state.logs[logDate.str]={day:logDate.kr,rested:logRested,exercises:deepCopy(logSets),memo:logMemo};
   saveL(state.logs);
+  // 루틴에 있는 운동의 세트 정보 자동 업데이트
   if(state.routine[logDate.kr]&&!logRested){
     state.routine[logDate.kr].exercises=state.routine[logDate.kr].exercises.map(re=>{
       const lg=logSets.find(ls=>ls.name===re.name);
-      return lg?{...re,sets:JSON.parse(JSON.stringify(lg.sets))}:re;
+      return lg?{...re,sets:deepCopy(lg.sets)}:re;
     });
     saveR(state.routine);
   }
   state.logSaved=true;render();
 }
 
-// ── 드래그 정렬 (기록 + 루틴) ────────────────────────────────────────────────
+// ── 드래그 정렬 ───────────────────────────────────────────────────────────────
 let drag=null;
 function initDragSort(){
   const app=document.getElementById("app");
 
   app.addEventListener("touchstart",e=>{
-    const logHandle=e.target.closest("[data-drag-handle]");
-    const routineHandle=e.target.closest("[data-routine-drag-handle]");
-    if(!logHandle&&!routineHandle)return;
+    const logH=e.target.closest("[data-drag-handle]");
+    const routineH=e.target.closest("[data-routine-drag-handle]");
+    if(!logH&&!routineH)return;
 
-    if(logHandle){
-      const card=logHandle.closest("[data-drag-idx]");
-      if(!card)return;
+    if(logH){
+      const card=logH.closest("[data-drag-idx]");if(!card)return;
       const idx=parseInt(card.dataset.dragIdx);
       const rect=card.getBoundingClientRect();
       const ghost=card.cloneNode(true);
@@ -411,10 +479,8 @@ function initDragSort(){
       card.style.visibility="hidden";
       drag={type:"log",idx,targetIdx:idx,card,ghost,startY:e.touches[0].clientY,origTop:rect.top};
     } else {
-      const row=routineHandle.closest("[data-routine-drag-idx]");
-      if(!row)return;
-      const day=row.dataset.routineDragDay;
-      const idx=parseInt(row.dataset.routineDragIdx);
+      const row=routineH.closest("[data-routine-drag-idx]");if(!row)return;
+      const day=row.dataset.routineDragDay,idx=parseInt(row.dataset.routineDragIdx);
       const rect=row.getBoundingClientRect();
       const ghost=row.cloneNode(true);
       ghost.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:300;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.14);background:#fff;opacity:0.97`;
@@ -428,49 +494,39 @@ function initDragSort(){
   app.addEventListener("touchmove",e=>{
     if(!drag)return;
     const touch=e.touches[0];
-    const dy=touch.clientY-drag.startY;
-    drag.ghost.style.top=(drag.origTop+dy)+"px";
+    drag.ghost.style.top=(drag.origTop+(touch.clientY-drag.startY))+"px";
 
-    // 원본 카드만 시각적으로 위치 표시 — DOM 재생성 없이
     if(drag.type==="log"){
       const cards=[...document.querySelectorAll("[data-drag-idx]")];
-      // 모든 카드 원래대로
-      cards.forEach(c=>{ c.style.transform=""; c.style.transition="transform 0.15s"; c.style.visibility= parseInt(c.dataset.dragIdx)===drag.idx?"hidden":"visible"; });
       let newTarget=drag.idx;
       for(const c of cards){
-        const r=c.getBoundingClientRect(),cIdx=parseInt(c.dataset.dragIdx);
-        if(cIdx===drag.idx)continue;
-        if(touch.clientY>r.top&&touch.clientY<r.bottom){newTarget=cIdx;break;}
+        const r=c.getBoundingClientRect(),ci=parseInt(c.dataset.dragIdx);
+        if(ci!==drag.idx&&touch.clientY>r.top&&touch.clientY<r.bottom){newTarget=ci;break;}
       }
       drag.targetIdx=newTarget;
-      // 이동 방향에 따라 카드 밀기
       cards.forEach(c=>{
-        const cIdx=parseInt(c.dataset.dragIdx);
-        if(cIdx===drag.idx)return;
-        if(drag.idx<drag.targetIdx && cIdx>drag.idx && cIdx<=drag.targetIdx)
-          c.style.transform="translateY(-100%) translateY(-10px)";
-        else if(drag.idx>drag.targetIdx && cIdx>=drag.targetIdx && cIdx<drag.idx)
-          c.style.transform="translateY(100%) translateY(10px)";
-        else c.style.transform="";
+        const ci=parseInt(c.dataset.dragIdx);
+        c.style.transition="transform 0.15s";
+        c.style.visibility=ci===drag.idx?"hidden":"visible";
+        if(ci===drag.idx)return;
+        c.style.transform=(drag.idx<drag.targetIdx&&ci>drag.idx&&ci<=drag.targetIdx)?"translateY(-110%)":
+          (drag.idx>drag.targetIdx&&ci>=drag.targetIdx&&ci<drag.idx)?"translateY(110%)":"";
       });
     } else {
       const rows=[...document.querySelectorAll(`[data-routine-drag-day="${drag.day}"]`)];
-      rows.forEach(r=>{ r.style.transform=""; r.style.transition="transform 0.15s"; r.style.visibility= parseInt(r.dataset.routineDragIdx)===drag.idx?"hidden":"visible"; });
       let newTarget=drag.idx;
       for(const r of rows){
-        const rect=r.getBoundingClientRect(),rIdx=parseInt(r.dataset.routineDragIdx);
-        if(rIdx===drag.idx)continue;
-        if(touch.clientY>rect.top&&touch.clientY<rect.bottom){newTarget=rIdx;break;}
+        const rect=r.getBoundingClientRect(),ri=parseInt(r.dataset.routineDragIdx);
+        if(ri!==drag.idx&&touch.clientY>rect.top&&touch.clientY<rect.bottom){newTarget=ri;break;}
       }
       drag.targetIdx=newTarget;
       rows.forEach(r=>{
-        const rIdx=parseInt(r.dataset.routineDragIdx);
-        if(rIdx===drag.idx)return;
-        if(drag.idx<drag.targetIdx && rIdx>drag.idx && rIdx<=drag.targetIdx)
-          r.style.transform="translateY(-100%) translateY(-10px)";
-        else if(drag.idx>drag.targetIdx && rIdx>=drag.targetIdx && rIdx<drag.idx)
-          r.style.transform="translateY(100%) translateY(10px)";
-        else r.style.transform="";
+        const ri=parseInt(r.dataset.routineDragIdx);
+        r.style.transition="transform 0.15s";
+        r.style.visibility=ri===drag.idx?"hidden":"visible";
+        if(ri===drag.idx)return;
+        r.style.transform=(drag.idx<drag.targetIdx&&ri>drag.idx&&ri<=drag.targetIdx)?"translateY(-110%)":
+          (drag.idx>drag.targetIdx&&ri>=drag.targetIdx&&ri<drag.idx)?"translateY(110%)":"";
       });
     }
     e.preventDefault();
@@ -479,34 +535,27 @@ function initDragSort(){
   const endDrag=()=>{
     if(!drag)return;
     drag.ghost.remove();
-    // transform 초기화
     document.querySelectorAll("[data-drag-idx],[data-routine-drag-idx]").forEach(el=>{
-      el.style.transform=""; el.style.transition=""; el.style.visibility="";
+      el.style.transform="";el.style.transition="";el.style.visibility="";
     });
-    // 최종 순서 적용
     if(drag.type==="log"&&drag.targetIdx!==drag.idx){
       const arr=[...state.logSets];
-      const[item]=arr.splice(drag.idx,1);
-      arr.splice(drag.targetIdx,0,item);
-      state.logSets=arr; state.logSaved=false;
+      const[item]=arr.splice(drag.idx,1);arr.splice(drag.targetIdx,0,item);
+      state.logSets=arr;state.logSaved=false;
     } else if(drag.type==="routine"&&drag.targetIdx!==drag.idx){
       const exs=[...state.routine[drag.day].exercises];
-      const[item]=exs.splice(drag.idx,1);
-      exs.splice(drag.targetIdx,0,item);
-      state.routine[drag.day].exercises=exs;
-      saveR(state.routine);
+      const[item]=exs.splice(drag.idx,1);exs.splice(drag.targetIdx,0,item);
+      state.routine[drag.day].exercises=exs;saveR(state.routine);
     }
-    drag=null; render();
+    drag=null;render();
   };
   app.addEventListener("touchend",endDrag);
   app.addEventListener("touchcancel",endDrag);
 }
 
-
-
 // ── 초기화 ────────────────────────────────────────────────────────────────────
 (function(){
-  const s=initLogSets(state.logDate.str,state.logDate.kr);
+  const s=initLogState(state.logDate.str,state.logDate.kr);
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[state.logDate.str];
   render();
