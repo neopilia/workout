@@ -402,23 +402,33 @@ function selectEx(name,day){
   if(day==="__log__"){
     state.logSets.push({name:name,sets:exRefSets(name)});state.logSaved=false;
   } else {
-    state.routine[day].exercises.push({name:name,sets:[]});saveR(state.routine);
+    // 기존 루틴에서 해당 운동의 세트 정보 가져와서 추가
+    state.routine[day].exercises.push({name:name,sets:exRefSets(name)});saveR(state.routine);
   }
   closeSheet();
 }
 function setNewExType(t){
   var nm=document.getElementById("new-ex-name");
-  state.sheet.exName=nm?nm.value:state.sheet.exName;
+  if(nm)state.sheet.exName=nm.value;
   state.sheet.exType=t;render();
+  // 포커스 유지
+  setTimeout(function(){
+    var el=document.getElementById("new-ex-name");
+    if(el){el.value=state.sheet.exName||"";el.focus();}
+  },50);
 }
 function confirmAddNewEx(day){
   var nm=document.getElementById("new-ex-name");
-  var name=nm?nm.value.trim():"";
-  if(!name)return;
+  var name=nm?nm.value.trim():(state.sheet.exName||"").trim();
+  if(!name){if(nm)nm.focus();return;}
   var t=state.sheet.exType||"weight";
   var defaultSet=t==="weight"?{w:20,r:10}:t==="reps"?{w:0,r:10}:{w:0,r:0,min:20};
-  state.routine[day].exercises.push({name:name,sets:[defaultSet]});
-  saveR(state.routine);closeSheet();
+  if(day==="__log__"){
+    state.logSets.push({name:name,sets:[defaultSet]});state.logSaved=false;
+  } else {
+    state.routine[day].exercises.push({name:name,sets:[defaultSet]});saveR(state.routine);
+  }
+  closeSheet();
 }
 
 function logSelectDate(str,kr,label){
