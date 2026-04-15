@@ -360,6 +360,7 @@ function renderSheet(){
       allExNames().map(function(n){
         return '<button class="select-item" data-ex-name="'+n.replace(/"/g,'&quot;')+'" data-ex-day="'+s.day+'">'+n+'</button>';
       }).join("")+
+      '<button class="select-item" style="color:var(--purple,#7c6ee6);font-weight:600" data-ex-name="__new__" data-ex-day="'+s.day+'">+ 새 운동 직접 입력</button>'+
       '</div>';
   }
   return'<div class="sheet-overlay" onclick="overlayClose(event)"><div class="sheet" onclick="event.stopPropagation()">'+inner+'</div></div>';
@@ -395,12 +396,29 @@ function routineSheetDeleteSet(){
 }
 function openAddExSheet(day){state.sheet={type:"addEx",day:day};render();}
 function selectEx(name,day){
+  if(name==="__new__"){
+    state.sheet={type:"addExNew",day:day,exType:"weight",exName:""};render();return;
+  }
   if(day==="__log__"){
     state.logSets.push({name:name,sets:exRefSets(name)});state.logSaved=false;
   } else {
     state.routine[day].exercises.push({name:name,sets:[]});saveR(state.routine);
   }
   closeSheet();
+}
+function setNewExType(t){
+  var nm=document.getElementById("new-ex-name");
+  state.sheet.exName=nm?nm.value:state.sheet.exName;
+  state.sheet.exType=t;render();
+}
+function confirmAddNewEx(day){
+  var nm=document.getElementById("new-ex-name");
+  var name=nm?nm.value.trim():"";
+  if(!name)return;
+  var t=state.sheet.exType||"weight";
+  var defaultSet=t==="weight"?{w:20,r:10}:t==="reps"?{w:0,r:10}:{w:0,r:0,min:20};
+  state.routine[day].exercises.push({name:name,sets:[defaultSet]});
+  saveR(state.routine);closeSheet();
 }
 
 function logSelectDate(str,kr,label){
