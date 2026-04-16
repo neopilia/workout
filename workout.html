@@ -12,24 +12,27 @@
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 html{height:100%;overflow-x:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
-  padding-top:calc(var(--safe-top) + 48px);
+  padding-top:var(--safe-top);
   padding-bottom:calc(90px + var(--safe-bot));
   -webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
 
-/* 상단 설정 아이콘 */
-#topbar{position:fixed;top:0;left:0;right:0;z-index:50;
-  padding-top:var(--safe-top);height:calc(var(--safe-top) + 48px)}
-#topbar-inner{max-width:390px;margin:0 auto;height:48px;
-  display:flex;align-items:center;justify-content:flex-end;padding:0 16px}
-#topbar-inner button{background:none;border:none;cursor:pointer;
-  font-size:22px;color:#bbb;padding:4px;line-height:1;-webkit-appearance:none}
+/* 설정 아이콘 — page-header 안에 인라인 배치 */
+.settings-btn{background:none;border:none;cursor:pointer;
+  font-size:22px;color:#bbb;padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0}
 
-/* 하단 탭바 */
-#tabbar{position:fixed;bottom:0;left:0;right:0;
+/* 하단 탭바 — 절대 움직이지 않도록 will-change + transform3d */
+#tabbar{
+  position:fixed;bottom:0;left:0;right:0;
   background:#fff;border-top:0.5px solid #e8e8e8;
-  padding:10px 14px;padding-bottom:calc(10px + max(var(--safe-bot),6px));
-  z-index:50}
+  padding:10px 14px;
+  padding-bottom:calc(10px + max(var(--safe-bot),6px));
+  z-index:50;
+  /* GPU 레이어 고정 — 리페인트 시 위치 흔들림 방지 */
+  will-change:transform;
+  transform:translate3d(0,0,0);
+  -webkit-transform:translate3d(0,0,0);
+}
 .tab-seg{background:#f2f2f7;border-radius:14px;display:flex;
   padding:4px;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;
@@ -122,9 +125,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
 </style>
 </head>
 <body>
-<div id="topbar"><div id="topbar-inner"><button data-action="go-settings">⚙</button></div></div>
 <div id="app"></div>
-<div id="tabbar"></div>
+<!-- 탭바는 HTML에 정적으로 존재 — JS가 innerHTML을 갈지 않고 클래스만 업데이트 -->
+<div id="tabbar">
+  <div class="tab-seg">
+    <button class="tab-btn active" data-tab="today">오늘</button>
+    <button class="tab-btn" data-tab="routine">루틴</button>
+    <button class="tab-btn" data-tab="log">기록</button>
+    <button class="tab-btn" data-tab="history">조회</button>
+  </div>
+</div>
 <script>
 var DAYS=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
 var DEFAULT_ROUTINE={
@@ -219,15 +229,19 @@ function initLogState(dStr,dayKr){
   return{rested:false,sets:info?info.exercises.map(function(ex){return{name:ex.name,sets:dc(ex.sets)};}):[],memo:""};
 }
 
+// ── 탭바 active 클래스만 갱신 (innerHTML 재작성 없음) ─────────────────────────
+function updateTabBar(){
+  var btns=document.querySelectorAll("#tabbar .tab-btn");
+  btns.forEach(function(b){
+    if(b.dataset.tab===state.tab){b.classList.add("active");}
+    else{b.classList.remove("active");}
+  });
+}
+
 // ── 렌더 ─────────────────────────────────────────────────────────────────────
 function render(){
-  var tabs=[{id:"today",label:"오늘"},{id:"routine",label:"루틴"},
-            {id:"log",label:"기록"},            {id:"history",label:"조회"}];
-  var th='<div class="tab-seg">';
-  tabs.forEach(function(t){
-    th+='<button class="tab-btn'+(state.tab===t.id?" active":"")+'" data-tab="'+t.id+'">'+t.label+'</button>';
-  });
-  document.getElementById("tabbar").innerHTML=th+'</div>';
+  // 탭바는 클래스만 업데이트 — DOM 재작성 금지
+  updateTabBar();
 
   var pages={today:renderToday,routine:renderRoutine,log:renderLog,
              history:renderHistory,settings:renderSettings};
@@ -254,13 +268,14 @@ function renderToday(){
     });
   }
   return '<div class="page-header"><div class="page-title">'+today+'</div>'+(log?'<span class="saved-badge">'+(log.rested?"휴식":"완료")+'</span>':"")+
+    '<button class="settings-btn" data-action="go-settings">⚙</button>'+
     '</div><div class="card" style="margin-bottom:16px">'+rows+'</div>'+
     '<button class="btn-primary" data-action="go-log">오늘 운동 기록하기</button>';
 }
 
 // ── 루틴 ─────────────────────────────────────────────────────────────────────
 function renderRoutine(){
-  var html='<div class="page-header"><div class="page-title">루틴 관리</div></div>';
+  var html='<div class="page-header"><div class="page-title">루틴 관리</div><button class="settings-btn" data-action="go-settings">⚙</button></div>';
   Object.keys(state.routine).forEach(function(day){
     var info=state.routine[day],isOpen=state.routineOpenDay===day;
     var body="";
@@ -333,6 +348,7 @@ function renderLog(){
       '</button>';
   }).join("");
   return '<div class="page-header"><div class="page-title">기록하기</div>'+(state.logSaved?'<span class="saved-badge">저장됨</span>':"")+
+    '<button class="settings-btn" data-action="go-settings">⚙</button>'+
     '</div><div class="date-seg">'+dateHtml+'</div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" data-action="log-rest">'+
     '<span style="font-size:16px;font-weight:600;color:'+(state.logRested?"#888":"#111")+'">'+(state.logRested?"쉬었어요":"운동했어요")+'</span>'+
@@ -345,7 +361,7 @@ function renderLog(){
 // ── 기록 보기 ─────────────────────────────────────────────────────────────────
 function renderHistory(){
   var dates=Object.keys(state.logs).sort(function(a,b){return b.localeCompare(a);});
-  var html='<div class="page-header"><div class="page-title">기록 보기</div></div>';
+  var html='<div class="page-header"><div class="page-title">기록 보기</div><button class="settings-btn" data-action="go-settings">⚙</button></div>';
   if(!dates.length){
     html+='<div style="text-align:center;padding:60px 0;color:#bbb;font-size:15px;font-weight:500">아직 기록이 없습니다</div>';
   } else {
@@ -377,7 +393,7 @@ function renderHistory(){
 function renderSettings(){
   var logCount=Object.keys(state.logs).length;
   var exCount=Object.keys(state.routine).reduce(function(n,d){return n+state.routine[d].exercises.length;},0);
-  return '<div class="page-header"><div class="page-title">설정</div></div>'+
+  return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back" style="font-size:18px;color:#888">✕</button></div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:16px">'+
     '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">데이터 백업</div>'+
     '<div style="font-size:14px;color:#888;margin-bottom:14px">루틴과 운동 기록 전체를 JSON 파일로 내보냅니다.</div>'+
@@ -393,7 +409,7 @@ function renderSettings(){
     '</div></div>'+
     '<div class="card"><div style="padding:16px">'+
     '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">앱 정보</div>'+
-    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">버전</span><span style="font-size:15px;font-weight:600;color:#111">v1.1</span></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">버전</span><span style="font-size:15px;font-weight:600;color:#111">v1.2</span></div>'+
     '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">운동 기록</span><span style="font-size:15px;font-weight:600;color:#111">'+logCount+'일</span></div>'+
     '<div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:15px;color:#555">등록된 운동</span><span style="font-size:15px;font-weight:600;color:#111">'+exCount+'개</span></div>'+
     '</div></div>';
@@ -451,6 +467,7 @@ function handleAction(el,e){
   var a=el.dataset.action;
   if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();window.scrollTo(0,0);return;}
   if(a==="go-settings"){state.tab="settings";render();window.scrollTo(0,0);return;}
+  if(a==="settings-back"){state.tab="today";render();window.scrollTo(0,0);return;}
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
   if(a==="routine-set"){state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,ei:parseInt(el.dataset.ei),si:0};render();return;}
@@ -547,7 +564,7 @@ function handleAction(el,e){
 
 // ── 이벤트 (최초 1회) ────────────────────────────────────────────────────────
 function initEvents(){
-  // 탭바 전용
+  // 탭바 클릭 — 탭바 DOM은 절대 재작성하지 않음
   document.getElementById("tabbar").addEventListener("click",function(e){
     var btn=e.target.closest(".tab-btn");
     if(!btn||!btn.dataset.tab)return;
@@ -558,6 +575,8 @@ function initEvents(){
     if(e.target.classList&&e.target.classList.contains("sheet-overlay")){state.sheet=null;render();return;}
     var el=e.target.closest("[data-action]");
     if(!el)return;
+    // 탭바 버튼은 위에서 이미 처리
+    if(el.closest("#tabbar"))return;
     handleAction(el,e);
   });
   // textarea
@@ -596,7 +615,7 @@ function exportRoutine(){
 
 // ── 백업 / 복원 ──────────────────────────────────────────────────────────────
 function backup(){
-  var data=JSON.stringify({version:"1.1",date:todayStr(),routine:state.routine,logs:state.logs},null,2);
+  var data=JSON.stringify({version:"1.2",date:todayStr(),routine:state.routine,logs:state.logs},null,2);
   if(navigator.share){navigator.share({title:"운동 루틴 백업 "+todayStr(),text:data}).catch(function(){});return;}
   var blob=new Blob([data],{type:"application/json"});
   var url=URL.createObjectURL(blob);
