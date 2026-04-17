@@ -11,24 +11,17 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-html{height:100%;overflow:hidden;}
+html,body{margin:0;padding:0;width:100%;-webkit-text-size-adjust:100%;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#f2f2f7;
-  -webkit-text-size-adjust:100%;
-  display:flex;
-  flex-direction:column;
-  height:100%;
-  overflow:hidden;
-  padding-top:var(--safe-top);
 }
-/* #app-wrap이 flex:1로 남은 공간 전부 차지, 스크롤도 여기서 */
 #app-wrap{
-  flex:1;
-  min-height:0;
+  width:100%;
+  padding-top:env(safe-area-inset-top);
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
-  width:100%;
+  /* height는 JS fitLayout이 주입 */
 }
 #app{
   max-width:390px;
@@ -37,11 +30,13 @@ body{
   width:100%;
 }
 #tabbar{
-  flex-shrink:0;
-  width:100%;
-  background:#fff;border-top:0.5px solid #e8e8e8;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#fff;
+  border-top:0.5px solid #e8e8e8;
   padding:10px 14px;
   padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  z-index:100;
 }
 .settings-btn{background:none;border:none;cursor:pointer;padding:6px;
   -webkit-appearance:none;flex-shrink:0;display:flex;align-items:center;
@@ -677,6 +672,18 @@ function renderSheet(){
 
 function scrollTop(){var a=document.getElementById("app-wrap");if(a)a.scrollTop=0;}
 
+function fitLayout(){
+  var tb=document.getElementById("tabbar");
+  var wrap=document.getElementById("app-wrap");
+  if(!tb||!wrap)return;
+  // 탭바를 bottom:0에 고정하고 app-wrap 높이 = 전체 - 탭바
+  var tbH=tb.offsetHeight;
+  var totalH=window.innerHeight;
+  wrap.style.height=(totalH-tbH)+"px";
+  wrap.style.paddingTop="env(safe-area-inset-top)";
+  tb.style.top="";  // top 제거, bottom:0 유지
+}
+
 // 같은 이름의 운동을 모든 요일에 세트 동기화 (중복 선언 제거됨)
 function syncExerciseAcrossDays(srcDay,exName,newSets){
   Object.keys(state.routine).forEach(function(day){
@@ -947,6 +954,10 @@ function initDragSort(){
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[state.logDate.str];
   render();initEvents();initDragSort();
+  // 레이아웃 높이 정확히 맞추기
+  fitLayout();
+  window.addEventListener("resize",fitLayout);
+  if(window.visualViewport)window.visualViewport.addEventListener("resize",fitLayout);
 })();
 </script>
 </body>
