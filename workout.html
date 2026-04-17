@@ -18,16 +18,23 @@ body{
   -webkit-text-size-adjust:100%;
   display:flex;
   flex-direction:column;
-  height:100%;          /* body가 뷰포트 정확히 꽉 참 — 넘치지도 모자라지도 않음 */
+  height:100%;
   overflow:hidden;
   padding-top:var(--safe-top);
 }
-#app{
+/* #app-wrap이 flex:1로 남은 공간 전부 차지, 스크롤도 여기서 */
+#app-wrap{
   flex:1;
-  min-height:0;         /* flex 자식이 부모를 넘치지 않도록 반드시 필요 */
-  overflow-y:auto;      /* 스크롤은 여기서만 */
+  min-height:0;
+  overflow-y:auto;
   -webkit-overflow-scrolling:touch;
-  max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;
+  width:100%;
+}
+#app{
+  max-width:390px;
+  margin:0 auto;
+  padding:0 0 16px;
+  width:100%;
 }
 #tabbar{
   flex-shrink:0;
@@ -111,7 +118,7 @@ body{
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app-wrap"><div id="app"></div></div>
 <div id="tabbar">
   <div class="tab-seg">
     <button class="tab-btn active" data-tab="today">오늘</button>
@@ -668,7 +675,7 @@ function renderSheet(){
   return '<div class="sheet-overlay"><div class="sheet">'+inner+'</div></div>';
 }
 
-function scrollTop(){var a=document.getElementById("app");if(a)a.scrollTop=0;}
+function scrollTop(){var a=document.getElementById("app-wrap");if(a)a.scrollTop=0;}
 
 // 같은 이름의 운동을 모든 요일에 세트 동기화 (중복 선언 제거됨)
 function syncExerciseAcrossDays(srcDay,exName,newSets){
