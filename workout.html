@@ -10,29 +10,41 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
-html{height:100%;overflow-x:hidden}
+
+/* html/body 전체를 고정 — 스크롤은 #app-scroll만 */
+html,body{height:100%;overflow:hidden;width:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
+  -webkit-text-size-adjust:100%;
+  display:flex;flex-direction:column;}
+
+/* 전체 레이아웃 컨테이너 */
+#layout{
+  display:flex;flex-direction:column;
+  width:100%;height:100%;
+}
+
+/* 스크롤 영역 */
+#app-scroll{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
   padding-top:var(--safe-top);
-  padding-bottom:calc(90px + var(--safe-bot));
-  -webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
-#app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
+}
+#app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;}
+
+/* 탭바 — layout 전체 너비 차지, 내부만 max-width 제한 */
+#tabbar{
+  flex-shrink:0;
+  width:100%;
+  background:#fff;
+  border-top:0.5px solid #e8e8e8;
+  padding:10px 14px;
+  padding-bottom:calc(10px + max(var(--safe-bot),6px));
+}
 
 /* 설정 아이콘 — page-header 안에 인라인 배치 */
 .settings-btn{background:none;border:none;cursor:pointer;
   font-size:22px;color:#bbb;padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0}
 
-/* 하단 탭바 — 절대 움직이지 않도록 will-change + transform3d */
-#tabbar{
-  position:fixed;bottom:0;left:0;right:0;
-  background:#fff;border-top:0.5px solid #e8e8e8;
-  padding:10px 14px;
-  padding-bottom:calc(10px + max(var(--safe-bot),6px));
-  z-index:50;
-  /* GPU 레이어 고정 — 리페인트 시 위치 흔들림 방지 */
-  will-change:transform;
-  transform:translate3d(0,0,0);
-  -webkit-transform:translate3d(0,0,0);
-}
 .tab-seg{background:#f2f2f7;border-radius:14px;display:flex;
   padding:4px;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;
@@ -125,8 +137,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
 </style>
 </head>
 <body>
-<div id="app"></div>
-<!-- 탭바는 HTML에 정적으로 존재 — JS가 innerHTML을 갈지 않고 클래스만 업데이트 -->
+<div id="layout">
+<div id="app-scroll"><div id="app"></div></div>
 <div id="tabbar">
   <div class="tab-seg">
     <button class="tab-btn active" data-tab="today">오늘</button>
@@ -134,6 +146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
     <button class="tab-btn" data-tab="log">기록</button>
     <button class="tab-btn" data-tab="history">통계</button>
   </div>
+</div>
 </div>
 <script>
 var DAYS=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
@@ -653,12 +666,13 @@ function renderSheet(){
   return '<div class="sheet-overlay"><div class="sheet">'+inner+'</div></div>';
 }
 
+function scrollTop(){var s=document.getElementById("app-scroll");if(s)s.scrollTop=0;}
 // ── 액션 핸들러 ───────────────────────────────────────────────────────────────
 function handleAction(el,e){
   var a=el.dataset.action;
-  if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();window.scrollTo(0,0);return;}
-  if(a==="go-settings"){state.tab="settings";render();window.scrollTo(0,0);return;}
-  if(a==="settings-back"){state.tab="today";render();window.scrollTo(0,0);return;}
+  if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();scrollTop();return;}
+  if(a==="go-settings"){state.tab="settings";render();scrollTop();return;}
+  if(a==="settings-back"){state.tab="today";render();scrollTop();return;}
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
   if(a==="hist-prev-month"){
@@ -770,7 +784,7 @@ function initEvents(){
   document.getElementById("tabbar").addEventListener("click",function(e){
     var btn=e.target.closest(".tab-btn");
     if(!btn||!btn.dataset.tab)return;
-    state.tab=btn.dataset.tab;state.logRoutineSync=null;render();window.scrollTo(0,0);
+    state.tab=btn.dataset.tab;state.logRoutineSync=null;render();scrollTop();
   });
   // 전체 위임
   document.addEventListener("click",function(e){
@@ -791,7 +805,7 @@ function initEvents(){
 function showToast(msg){
   var t=document.createElement("div");
   t.textContent=msg;
-  t.style.cssText="position:fixed;bottom:calc(90px + max(var(--safe-bot),6px) + 12px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s";
+  t.style.cssText="position:fixed;bottom:calc(80px + max(var(--safe-bot),6px) + 12px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s";
   document.body.appendChild(t);
   requestAnimationFrame(function(){t.style.opacity="1";});
   setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},200);},2000);
@@ -856,7 +870,7 @@ function getDragEls(type,day){
 }
 function getDragIdx(el,type){return parseInt(type==="log"?el.dataset.dragIdx:el.dataset.routineDragIdx);}
 function initDragSort(){
-  var app=document.getElementById("app");
+  var app=document.getElementById("app-scroll");
   app.addEventListener("touchstart",function(e){
     var lh=e.target.closest("[data-drag-handle]"),rh=e.target.closest("[data-routine-drag-handle]");
     if(!lh&&!rh)return;
