@@ -11,10 +11,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-/* 레이아웃 — dvh로 Safari 주소창 문제 해결 */
+/* 레이아웃 — 높이는 JS가 직접 주입 (Safari 주소창 버그 완전 우회) */
 html, body {
   margin:0;padding:0;
-  width:100%;height:100%;
+  width:100%;
   overflow:hidden;
 }
 body{
@@ -25,13 +25,12 @@ body{
 #layout{
   display:flex;flex-direction:column;
   width:100%;
-  height:100vh;        /* 폴백 */
-  height:100dvh;       /* Safari 15.4+, Chrome 108+ — 주소창 제외한 실제 뷰포트 */
   overflow:hidden;
+  /* 높이는 JS setLayoutHeight()가 window.innerHeight로 직접 설정 */
 }
 #app-scroll{
   flex:1;
-  min-height:0;        /* flex 자식이 넘치지 않도록 */
+  min-height:0;
   overflow-y:auto;overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
   padding-top:var(--safe-top);
@@ -1018,7 +1017,20 @@ function initDragSort(){
 }
 
 // ── 초기화 ───────────────────────────────────────────────────────────────────
+function setLayoutHeight(){
+  // window.innerHeight = 주소창 제외 실제 높이 (Safari에서 가장 정확)
+  var h=window.innerHeight;
+  document.getElementById("layout").style.height=h+"px";
+}
+
 (function(){
+  setLayoutHeight();
+  window.addEventListener("resize",setLayoutHeight);
+  // iOS에서 주소창이 나타나고 사라질 때 visualViewport 이벤트가 더 정확
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize",setLayoutHeight);
+  }
+
   var s=initLogState(state.logDate.str,state.logDate.kr);
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[state.logDate.str];
