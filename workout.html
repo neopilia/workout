@@ -676,12 +676,10 @@ function fitLayout(){
   var tb=document.getElementById("tabbar");
   var wrap=document.getElementById("app-wrap");
   if(!tb||!wrap)return;
-  // 탭바를 bottom:0에 고정하고 app-wrap 높이 = 전체 - 탭바
+  // visualViewport가 있으면 사용 (Safari에서 주소창/홈인디케이터 제외한 정확한 높이)
+  var totalH=window.visualViewport?window.visualViewport.height:window.innerHeight;
   var tbH=tb.offsetHeight;
-  var totalH=window.innerHeight;
   wrap.style.height=(totalH-tbH)+"px";
-  wrap.style.paddingTop="env(safe-area-inset-top)";
-  tb.style.top="";  // top 제거, bottom:0 유지
 }
 
 // 같은 이름의 운동을 모든 요일에 세트 동기화 (중복 선언 제거됨)
