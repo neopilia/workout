@@ -525,8 +525,12 @@ function renderHistory(){
     volPoints=volPoints.map(function(pt){
       return {d:pt.d,v:calcExVolume(state.logs[pt.ds].exercises,selEx),ds:pt.ds};
     });
+    // 선택한 운동이 실제로 있는 날만 표시 (볼륨 0이어도 포함)
+    volPoints=volPoints.filter(function(pt){
+      return (state.logs[pt.ds].exercises||[]).some(function(ex){return ex.name===selEx;});
+    });
   }
-  volPoints=volPoints.filter(function(pt){return pt.v>0;});
+  // 전체 보기일 때는 운동한 날이면 볼륨 0이어도 포함 (맨몸 운동만 한 경우)
 
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
   chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
