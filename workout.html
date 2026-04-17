@@ -11,11 +11,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 html{height:100%;overflow-x:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;min-height:100%;padding-top:var(--safe-top);padding-bottom:calc(100px + var(--safe-bot));-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;min-height:100%;padding-top:var(--safe-top);padding-bottom:calc(80px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
-#tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:0.5px solid #e8e8e8;padding-top:10px;padding-left:14px;padding-right:14px;padding-bottom:calc(10px + max(var(--safe-bot),6px));z-index:100}
-/* 탭바 아래 홈 인디케이터 영역을 흰색으로 채움 */
-#tabbar::after{content:"";display:block;position:fixed;bottom:0;left:0;right:0;height:max(var(--safe-bot),6px);background:#fff;z-index:99}
+#tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:0.5px solid #e8e8e8;padding-top:10px;padding-left:14px;padding-right:14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:100}
 .tab-seg{background:#f2f2f7;border-radius:14px;display:flex;padding:4px;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;border-radius:10px;font-size:16px;font-weight:400;color:#888;background:none;transition:all 0.15s;font-family:inherit}
 .tab-btn.active{background:#fff;color:#111;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
