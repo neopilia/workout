@@ -11,27 +11,32 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-/* html/body 전체를 고정 — 스크롤은 #app-scroll만 */
-html,body{height:100%;overflow:hidden;width:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
+/* 레이아웃 — dvh로 Safari 주소창 문제 해결 */
+html, body {
+  margin:0;padding:0;
+  width:100%;height:100%;
+  overflow:hidden;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#f2f2f7;
   -webkit-text-size-adjust:100%;
-  display:flex;flex-direction:column;}
-
-/* 전체 레이아웃 컨테이너 */
+}
 #layout{
   display:flex;flex-direction:column;
-  width:100%;height:100%;
+  width:100%;
+  height:100vh;        /* 폴백 */
+  height:100dvh;       /* Safari 15.4+, Chrome 108+ — 주소창 제외한 실제 뷰포트 */
+  overflow:hidden;
 }
-
-/* 스크롤 영역 */
 #app-scroll{
-  flex:1;overflow-y:auto;overflow-x:hidden;
+  flex:1;
+  min-height:0;        /* flex 자식이 넘치지 않도록 */
+  overflow-y:auto;overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
   padding-top:var(--safe-top);
 }
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;}
-
-/* 탭바 — layout 전체 너비 차지, 내부만 max-width 제한 */
 #tabbar{
   flex-shrink:0;
   width:100%;
@@ -43,7 +48,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
 
 /* 설정 아이콘 — page-header 안에 인라인 배치 */
 .settings-btn{background:none;border:none;cursor:pointer;
-  font-size:22px;color:#bbb;padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0}
+  padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;}
 
 .tab-seg{background:#f2f2f7;border-radius:14px;display:flex;
   padding:4px;gap:3px;max-width:390px;margin:0 auto}
@@ -157,21 +163,21 @@ var DEFAULT_ROUTINE={
     {name:"Pec Deck",sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
     {name:"Arm Extension",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
     {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
-    {name:"런닝머신",sets:[{w:0,r:0,min:20}]}
+    {name:"런닝머신",sets:[{incline:1,speed:6,min:20}]}
   ]},
   "수요일":{name:"하체",exercises:[
     {name:"Squat",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
     {name:"Leg Curl",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
     {name:"Leg Extension",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
     {name:"Back Extension",sets:[{w:0,r:13},{w:0,r:13},{w:0,r:13}]},
-    {name:"런닝머신",sets:[{w:0,r:0,min:20}]}
+    {name:"런닝머신",sets:[{incline:1,speed:6,min:20}]}
   ]},
   "목요일":{name:"등",exercises:[
     {name:"Lat Pull Down",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
     {name:"Row",sets:[{w:35,r:13},{w:35,r:13},{w:35,r:13}]},
     {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
     {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
-    {name:"런닝머신",sets:[{w:0,r:0,min:20}]}
+    {name:"런닝머신",sets:[{incline:1,speed:6,min:20}]}
   ]},
   "금요일":{name:"휴식",exercises:[]},
   "토요일":{name:"전체",exercises:[
@@ -189,14 +195,53 @@ var DEFAULT_ROUTINE={
 };
 
 var RK="workout_routine_v1",LK="workout_logs_v1";
-function loadR(){try{var s=localStorage.getItem(RK);return s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}catch(e){return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}}
-function loadL(){try{var s=localStorage.getItem(LK);return s?JSON.parse(s):{};}catch(e){return{};}}
-function saveR(r){try{localStorage.setItem(RK,JSON.stringify(r));}catch(e){}}
+function migrateTreadmill(routine){
+  Object.keys(routine).forEach(function(day){
+    routine[day].exercises.forEach(function(ex){
+      if(ex.name==="런닝머신"){
+        ex.sets=ex.sets.map(function(s){
+          // 구버전: {w:0,r:0,min:N} → 새버전: {incline:1,speed:6,min:N}
+          if(s.incline==null&&s.speed==null&&s.min!=null){
+            return{incline:1,speed:6,min:s.min};
+          }
+          return s;
+        });
+      }
+    });
+  });
+  return routine;
+}
+function loadR(){try{var s=localStorage.getItem(RK);return s?migrateTreadmill(JSON.parse(s)):JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}catch(e){return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}}function loadL(){
+  try{
+    var s=localStorage.getItem(LK);
+    if(!s)return{};
+    var logs=JSON.parse(s);
+    // 로그 내 런닝머신 세트 마이그레이션
+    Object.keys(logs).forEach(function(d){
+      (logs[d].exercises||[]).forEach(function(ex){
+        if(ex.name==="런닝머신"){
+          ex.sets=ex.sets.map(function(s){
+            if(s.incline==null&&s.speed==null&&s.min!=null)return{incline:1,speed:6,min:s.min};
+            return s;
+          });
+        }
+      });
+    });
+    return logs;
+  }catch(e){return{};}
+}function saveR(r){try{localStorage.setItem(RK,JSON.stringify(r));}catch(e){}}
 function saveL(l){try{localStorage.setItem(LK,JSON.stringify(l));}catch(e){}}
 function todayKr(){return DAYS[new Date().getDay()===0?6:new Date().getDay()-1];}
 function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function pad(n){return n<10?"0"+n:String(n);}
-function fmtSet(s){return s.min!=null&&s.min>0?s.min+"분":s.w===0?s.r+"회":s.w+"kg×"+s.r+"회";}
+function fmtSet(s){
+  if(s.incline!=null||s.speed!=null){
+    // 런닝머신: 경사%·속도km/h·분
+    return (s.incline||0)+'%·'+(s.speed||0)+'km·'+(s.min||0)+'분';
+  }
+  if(s.min!=null&&s.min>0)return s.min+'분';
+  return s.w===0?s.r+'회':s.w+'kg×'+s.r+'회';
+}
 function dc(o){return JSON.parse(JSON.stringify(o));}
 function getPast2(){
   var res=[];
@@ -282,14 +327,14 @@ function renderToday(){
     });
   }
   return '<div class="page-header"><div class="page-title">'+today+'</div>'+(log?'<span class="saved-badge">'+(log.rested?"휴식":"완료")+'</span>':"")+
-    '<button class="settings-btn" data-action="go-settings">⚙</button>'+
+    '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
     '</div><div class="card" style="margin-bottom:16px">'+rows+'</div>'+
     '<button class="btn-primary" data-action="go-log">오늘 운동 기록하기</button>';
 }
 
 // ── 루틴 ─────────────────────────────────────────────────────────────────────
 function renderRoutine(){
-  var html='<div class="page-header"><div class="page-title">루틴 관리</div><button class="settings-btn" data-action="go-settings">⚙</button></div>';
+  var html='<div class="page-header"><div class="page-title">루틴 관리</div><button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button></div>';
   Object.keys(state.routine).forEach(function(day){
     var info=state.routine[day],isOpen=state.routineOpenDay===day;
     var body="";
@@ -300,7 +345,7 @@ function renderRoutine(){
       } else {
         info.exercises.forEach(function(ex,i){
           var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
-            ex.sets.map(function(s){return '<button class="set-chip" data-action="routine-set" data-day="'+day+'" data-ei="'+i+'">'+fmtSet(s)+'</button>';}).join("");
+            ex.sets.map(function(s,si){return '<button class="set-chip" data-action="routine-set" data-day="'+day+'" data-ei="'+i+'" data-si="'+si+'">'+fmtSet(s)+'</button>';}).join("");
           rows+='<div data-routine-drag-day="'+day+'" data-routine-drag-idx="'+i+'" style="display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:0.5px solid #f5f5f5">'+
             '<div class="drag-handle" data-routine-drag-handle="1">⠿</div>'+
             '<div style="flex:1"><div style="font-size:16px;font-weight:600;color:#111;margin-bottom:6px">'+ex.name+'</div>'+
@@ -362,7 +407,7 @@ function renderLog(){
       '</button>';
   }).join("");
   return '<div class="page-header"><div class="page-title">기록하기</div>'+(state.logSaved?'<span class="saved-badge">저장됨</span>':"")+
-    '<button class="settings-btn" data-action="go-settings">⚙</button>'+
+    '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
     '</div><div class="date-seg">'+dateHtml+'</div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" data-action="log-rest">'+
     '<span style="font-size:16px;font-weight:600;color:'+(state.logRested?"#888":"#111")+'">'+(state.logRested?"쉬었어요":"운동했어요")+'</span>'+
@@ -589,7 +634,7 @@ function renderHistory(){
     });
   }
 
-  return '<div class="page-header"><div class="page-title">통계</div><button class="settings-btn" data-action="go-settings">⚙</button></div>'+
+  return '<div class="page-header"><div class="page-title">통계</div><button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button></div>'+
     heatHtml+chartHtml+listHtml+'<div style="height:8px"></div>';
 }
 
@@ -597,25 +642,25 @@ function renderHistory(){
 function renderSettings(){
   var logCount=Object.keys(state.logs).length;
   var exCount=Object.keys(state.routine).reduce(function(n,d){return n+state.routine[d].exercises.length;},0);
-  return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back" style="font-size:18px;color:#888">✕</button></div>'+
-    '<div class="card" style="margin-bottom:10px"><div style="padding:16px">'+
-    '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">데이터 백업</div>'+
-    '<div style="font-size:14px;color:#888;margin-bottom:14px">루틴과 운동 기록 전체를 JSON 파일로 내보냅니다.</div>'+
-    '<button class="btn-primary" data-action="backup" style="margin:0">백업 파일 내보내기</button>'+
-    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:16px">'+
-    '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">데이터 복원</div>'+
-    '<div style="font-size:14px;color:#888;margin-bottom:14px">백업 파일로 기존 데이터를 복원합니다.</div>'+
-    '<button class="btn-secondary" data-action="restore" style="margin:0">백업 파일 불러오기</button>'+
+  return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="18" x2="18" y2="18"/></svg></button></div>'+
+    '<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">데이터 백업</div>'+
+    '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">루틴과 운동 기록 전체를 JSON 파일로 내보냅니다.</div>'+
+    '<button class="btn-primary" data-action="backup" style="margin:0;width:100%">백업 파일 내보내기</button>'+
+    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:20px 20px 16px">'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">데이터 복원</div>'+
+    '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">백업 파일로 기존 데이터를 복원합니다.</div>'+
+    '<button class="btn-secondary" data-action="restore" style="margin:0;width:100%">백업 파일 불러오기</button>'+
     '<input type="file" id="restore-file" accept=".json" style="display:none">'+
-    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:16px">'+
-    '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">루틴 내보내기</div>'+
-    '<button class="btn-secondary" data-action="export" style="margin:0">텍스트 파일로 내보내기</button>'+
+    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:20px 20px 16px">'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">루틴 내보내기</div>'+
+    '<button class="btn-secondary" data-action="export" style="margin:0;width:100%">텍스트 파일로 내보내기</button>'+
     '</div></div>'+
-    '<div class="card"><div style="padding:16px">'+
-    '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">앱 정보</div>'+
-    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">버전</span><span style="font-size:15px;font-weight:600;color:#111">v1.2</span></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">운동 기록</span><span style="font-size:15px;font-weight:600;color:#111">'+logCount+'일</span></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:15px;color:#555">등록된 운동</span><span style="font-size:15px;font-weight:600;color:#111">'+exCount+'개</span></div>'+
+    '<div class="card"><div style="padding:20px">'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px">앱 정보</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">버전</span><span style="font-size:15px;font-weight:600;color:#111">v1.3</span></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">운동 기록</span><span style="font-size:15px;font-weight:600;color:#111">'+logCount+'일</span></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><span style="font-size:15px;color:#555">등록된 운동</span><span style="font-size:15px;font-weight:600;color:#111">'+exCount+'개</span></div>'+
     '</div></div>';
 }
 
@@ -627,7 +672,24 @@ function renderSheet(){
     var ex=s.src==="log"?state.logSets[s.ei]:state.routine[s.day].exercises[s.ei];
     var set=ex.sets[s.si],pfx=s.src==="log"?"sv":"rv";
     inner='<div class="sheet-handle"></div><div class="sheet-title">'+ex.name+' · 세트 '+(s.si+1)+'</div>';
-    if(set.min!=null){
+    if(set.incline!=null||set.speed!=null){
+      // 런닝머신 전용
+      inner+='<div class="sheet-row"><span class="sheet-label">경사</span><div style="display:flex;align-items:center;gap:8px">'+
+        '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="incline" data-delta="-0.5">−</button>'+
+        '<div class="stepper-val" id="'+pfx+'-incline">'+(set.incline||0)+'</div>'+
+        '<button class="stepper-btn" data-action="step" data-field="incline" data-delta="0.5">+</button></div>'+
+        '<span style="font-size:16px;color:#555;font-weight:500">%</span></div></div>';
+      inner+='<div class="sheet-row"><span class="sheet-label">속도</span><div style="display:flex;align-items:center;gap:8px">'+
+        '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="speed" data-delta="-0.5">−</button>'+
+        '<div class="stepper-val" id="'+pfx+'-speed">'+(set.speed||0)+'</div>'+
+        '<button class="stepper-btn" data-action="step" data-field="speed" data-delta="0.5">+</button></div>'+
+        '<span style="font-size:16px;color:#555;font-weight:500">km/h</span></div></div>';
+      inner+='<div class="sheet-row"><span class="sheet-label">시간</span><div style="display:flex;align-items:center;gap:8px">'+
+        '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="min" data-delta="-1">−</button>'+
+        '<div class="stepper-val" id="'+pfx+'-min">'+(set.min||0)+'</div>'+
+        '<button class="stepper-btn" data-action="step" data-field="min" data-delta="1">+</button></div>'+
+        '<span style="font-size:16px;color:#555;font-weight:500">분</span></div></div>';
+    } else if(set.min!=null){
       inner+='<div class="sheet-row"><span class="sheet-label">시간</span><div style="display:flex;align-items:center;gap:8px">'+
         '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="min" data-delta="-1">−</button>'+
         '<div class="stepper-val" id="'+pfx+'-min">'+set.min+'</div>'+
@@ -655,15 +717,26 @@ function renderSheet(){
     var t=s.exType||"weight";
     inner='<div class="sheet-handle"></div><div class="sheet-title">새 운동 추가</div>'+
       '<input id="new-ex-name" type="text" placeholder="운동 이름" style="width:100%;padding:14px 16px;font-size:16px;border:none;border-radius:14px;background:#f2f2f7;font-family:inherit;margin-bottom:14px;color:#111">'+
-      '<div style="display:flex;gap:8px;margin-bottom:20px">'+
+      '<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">'+
       '<button class="type-btn'+(t==="weight"?" on":"")+'" data-action="ex-type" data-type="weight">중량+횟수</button>'+
       '<button class="type-btn'+(t==="reps"?" on":"")+'" data-action="ex-type" data-type="reps">횟수만</button>'+
       '<button class="type-btn'+(t==="time"?" on":"")+'" data-action="ex-type" data-type="time">시간</button>'+
+      '<button class="type-btn'+(t==="treadmill"?" on":"")+'" data-action="ex-type" data-type="treadmill">런닝머신</button>'+
       '</div><div class="sheet-btns">'+
       '<button class="sheet-btn-del" data-action="close-sheet">취소</button>'+
       '<button class="sheet-btn-ok" data-action="confirm-ex" data-day="'+s.day+'">추가</button></div>';
   }
   return '<div class="sheet-overlay"><div class="sheet">'+inner+'</div></div>';
+}
+
+// 같은 이름의 운동을 모든 요일에 세트 동기화
+function syncExerciseAcrossDays(srcDay, exName, newSets){
+  Object.keys(state.routine).forEach(function(day){
+    if(day===srcDay)return;
+    state.routine[day].exercises.forEach(function(ex){
+      if(ex.name===exName) ex.sets=dc(newSets);
+    });
+  });
 }
 
 function scrollTop(){var s=document.getElementById("app-scroll");if(s)s.scrollTop=0;}
@@ -686,10 +759,12 @@ function handleAction(el,e){
   if(a==="hist-sel-ex"){
     state.historySelectedEx=el.dataset.name||null;render();return;
   }
-  if(a==="routine-set"){state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,ei:parseInt(el.dataset.ei),si:0};render();return;}
+  if(a==="routine-set"){state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,ei:parseInt(el.dataset.ei),si:parseInt(el.dataset.si||0)};render();return;}
   if(a==="routine-add-set"){
     var ex=state.routine[el.dataset.day].exercises[parseInt(el.dataset.ei)];
-    ex.sets.push(dc(ex.sets[ex.sets.length-1]||{w:0,r:10}));saveR(state.routine);render();return;
+    ex.sets.push(dc(ex.sets[ex.sets.length-1]||{w:0,r:10}));
+    syncExerciseAcrossDays(el.dataset.day,ex.name,ex.sets);
+    saveR(state.routine);render();return;
   }
   if(a==="routine-del-ex"){
     var day=el.dataset.day,ei=parseInt(el.dataset.ei);
@@ -715,7 +790,7 @@ function handleAction(el,e){
     var inp=document.getElementById("new-ex-name");
     var nm=(inp?inp.value:"").trim();if(!nm)return;
     var t2=state.sheet.exType||"weight";
-    var defSet=t2==="weight"?{w:20,r:10}:t2==="reps"?{w:0,r:10}:{w:0,r:0,min:20};
+    var defSet=t2==="weight"?{w:20,r:10}:t2==="reps"?{w:0,r:10}:t2==="treadmill"?{incline:1,speed:6,min:20}:{w:0,r:0,min:20};
     var day3=el.dataset.day;
     if(day3==="__log__"){state.logSets.push({name:nm,sets:[defSet]});state.logSaved=false;}
     else{state.routine[day3].exercises.push({name:nm,sets:[defSet]});saveR(state.routine);}
@@ -749,7 +824,12 @@ function handleAction(el,e){
         if(state.logRoutineSync[re.name]){
           var lg=null;
           state.logSets.forEach(function(ls2){if(ls2.name===re.name)lg=ls2;});
-          if(lg){changed=true;return Object.assign({},re,{sets:dc(lg.sets)});}
+          if(lg){
+            changed=true;
+            var newSets=dc(lg.sets);
+            syncExerciseAcrossDays(ld.kr,re.name,newSets);
+            return Object.assign({},re,{sets:newSets});
+          }
         }
         return re;
       });
@@ -762,14 +842,27 @@ function handleAction(el,e){
     var s2=state.sheet,field=el.dataset.field,delta=parseFloat(el.dataset.delta);
     var set2=s2.src==="log"?state.logSets[s2.ei].sets[s2.si]:state.routine[s2.day].exercises[s2.ei].sets[s2.si];
     set2[field]=Math.max(0,Math.round(((set2[field]||0)+delta)*10)/10);
-    if(s2.src==="routine")saveR(state.routine);else state.logSaved=false;
+    if(s2.src==="routine"){
+      var exName=state.routine[s2.day].exercises[s2.ei].name;
+      var newSets=state.routine[s2.day].exercises[s2.ei].sets;
+      syncExerciseAcrossDays(s2.day,exName,newSets);
+      saveR(state.routine);
+    } else {
+      state.logSaved=false;
+    }
     var valEl=document.getElementById((s2.src==="log"?"sv":"rv")+"-"+field);if(valEl)valEl.textContent=set2[field];
     return;
   }
   if(a==="del-set"){
     var s3=state.sheet;
-    if(s3.src==="log"){state.logSets[s3.ei].sets.splice(s3.si,1);state.logSaved=false;}
-    else{state.routine[s3.day].exercises[s3.ei].sets.splice(s3.si,1);saveR(state.routine);}
+    if(s3.src==="log"){
+      state.logSets[s3.ei].sets.splice(s3.si,1);state.logSaved=false;
+    } else {
+      var ex3=state.routine[s3.day].exercises[s3.ei];
+      ex3.sets.splice(s3.si,1);
+      syncExerciseAcrossDays(s3.day,ex3.name,ex3.sets);
+      saveR(state.routine);
+    }
     state.sheet=null;render();return;
   }
   if(a==="close-sheet"){state.sheet=null;render();return;}
