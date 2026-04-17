@@ -18,10 +18,9 @@ body{
 }
 #app-wrap{
   width:100%;
-  padding-top:env(safe-area-inset-top);
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
-  /* height는 JS fitLayout이 주입 */
+  /* padding-top은 JS fitLayout이 safe area 포함해서 height 계산 */
 }
 #app{
   max-width:390px;
@@ -563,10 +562,12 @@ function renderSettings(){
   // 레이아웃 측정값 출력
   var tb=document.getElementById("tabbar");
   var wrap=document.getElementById("app-wrap");
+  var bodyPT=parseFloat(getComputedStyle(document.body).paddingTop)||0;
   var layoutInfo=
     'window.innerHeight: '+window.innerHeight+'\n'+
     'visualViewport.height: '+(window.visualViewport?window.visualViewport.height:"없음")+'\n'+
     'tabbar.offsetHeight: '+(tb?tb.offsetHeight:"없음")+'\n'+
+    'body.paddingTop: '+bodyPT+'px\n'+
     'app-wrap.style.height: '+(wrap?wrap.style.height:"없음")+'\n'+
     'app-wrap.offsetHeight: '+(wrap?wrap.offsetHeight:"없음");
   var layoutHtml='<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
@@ -694,13 +695,13 @@ function fitLayout(){
   var wrap=document.getElementById("app-wrap");
   if(!tb||!wrap)return;
   var totalH=window.visualViewport?window.visualViewport.height:window.innerHeight;
-  // offsetHeight가 0이면 재시도 (렌더 직후 타이밍 문제 방지)
   var tbH=tb.offsetHeight;
-  if(!tbH){
-    requestAnimationFrame(fitLayout);
-    return;
-  }
-  wrap.style.height=(totalH-tbH)+"px";
+  if(!tbH){requestAnimationFrame(fitLayout);return;}
+  // body의 padding-top(safe-area-inset-top)만큼 빼야 정확히 맞음
+  var safeTop=document.body.getBoundingClientRect().top*-1||0;
+  // body는 position:static이므로 padding-top을 CSS로 읽음
+  var bodyPT=parseFloat(getComputedStyle(document.body).paddingTop)||0;
+  wrap.style.height=(totalH-tbH-bodyPT)+"px";
 }
 
 // 같은 이름의 운동을 모든 요일에 세트 동기화 (중복 선언 제거됨)
