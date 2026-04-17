@@ -11,20 +11,22 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-html{height:100%;overflow-x:hidden;}
+html{height:100%;overflow:hidden;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#f2f2f7;
   -webkit-text-size-adjust:100%;
   display:flex;
   flex-direction:column;
-  min-height:100vh;     /* 폴백 */
-  min-height:100dvh;    /* Safari 15.4+ — 주소창 포함한 실제 높이 */
+  height:100%;          /* body가 뷰포트 정확히 꽉 참 — 넘치지도 모자라지도 않음 */
+  overflow:hidden;
   padding-top:var(--safe-top);
-  overflow-x:hidden;
 }
 #app{
   flex:1;
+  min-height:0;         /* flex 자식이 부모를 넘치지 않도록 반드시 필요 */
+  overflow-y:auto;      /* 스크롤은 여기서만 */
+  -webkit-overflow-scrolling:touch;
   max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;
 }
 #tabbar{
@@ -666,7 +668,7 @@ function renderSheet(){
   return '<div class="sheet-overlay"><div class="sheet">'+inner+'</div></div>';
 }
 
-function scrollTop(){window.scrollTo(0,0);}
+function scrollTop(){var a=document.getElementById("app");if(a)a.scrollTop=0;}
 
 // 같은 이름의 운동을 모든 요일에 세트 동기화 (중복 선언 제거됨)
 function syncExerciseAcrossDays(srcDay,exName,newSets){
