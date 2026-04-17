@@ -11,38 +11,35 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-/* 레이아웃 — 높이는 JS가 직접 주입 (Safari 주소창 버그 완전 우회) */
+/* 레이아웃 */
 html, body {
-  margin:0;padding:0;
-  width:100%;
-  overflow:hidden;
+  margin:0;padding:0;width:100%;
+  -webkit-text-size-adjust:100%;
 }
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#f2f2f7;
-  -webkit-text-size-adjust:100%;
+  /* 탭바 높이만큼 아래 여백 — safe area 포함 */
+  padding-bottom:calc(68px + env(safe-area-inset-bottom));
 }
-#layout{
-  display:flex;flex-direction:column;
-  width:100%;
-  overflow:hidden;
-  /* 높이는 JS setLayoutHeight()가 window.innerHeight로 직접 설정 */
-}
-#app-scroll{
-  flex:1;
-  min-height:0;
-  overflow-y:auto;overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  padding-top:var(--safe-top);
-}
+#layout{ width:100%; }
+#app-scroll{ width:100%; }
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;}
+
+/* 탭바 — position:fixed, innerHTML 재작성 없이 클래스만 교체하므로 흔들림 없음 */
 #tabbar{
-  flex-shrink:0;
-  width:100%;
+  position:fixed;
+  bottom:0;left:0;right:0;
   background:#fff;
   border-top:0.5px solid #e8e8e8;
   padding:10px 14px;
-  padding-bottom:calc(10px + max(var(--safe-bot),6px));
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  z-index:100;
+  /* GPU 레이어로 올려서 리페인트와 분리 */
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
 }
 
 /* 설정 아이콘 — page-header 안에 인라인 배치 */
@@ -142,8 +139,7 @@ body{
 </style>
 </head>
 <body>
-<div id="layout">
-<div id="app-scroll"><div id="app"></div></div>
+<div id="layout"><div id="app-scroll"><div id="app"></div></div></div>
 <div id="tabbar">
   <div class="tab-seg">
     <button class="tab-btn active" data-tab="today">오늘</button>
@@ -151,7 +147,6 @@ body{
     <button class="tab-btn" data-tab="log">기록</button>
     <button class="tab-btn" data-tab="history">통계</button>
   </div>
-</div>
 </div>
 <script>
 var DAYS=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
@@ -421,7 +416,8 @@ function calcVolume(exercises){
   var v=0;
   (exercises||[]).forEach(function(ex){
     ex.sets.forEach(function(s){
-      if(s.min){v+=s.min*10;}
+      if(s.incline!=null||s.speed!=null){v+=(s.min||0)*10;} // 런닝머신
+      else if(s.min){v+=s.min*10;}
       else{v+=(s.w||0)*(s.r||0);}
     });
   });
@@ -432,7 +428,8 @@ function calcExVolume(exercises,name){
   (exercises||[]).forEach(function(ex){
     if(ex.name!==name)return;
     ex.sets.forEach(function(s){
-      if(s.min){v+=s.min*10;}
+      if(s.incline!=null||s.speed!=null){v+=(s.min||0)*10;}
+      else if(s.min){v+=s.min*10;}
       else{v+=(s.w||0)*(s.r||0);}
     });
   });
@@ -510,28 +507,51 @@ function renderHistory(){
   heatHtml+='</div></div></div>';
 
   // ── 볼륨 선 그래프 ──
-  // 해당 달 운동일 데이터 수집
+  // 운동한 날만 수집 (휴식일 제외) — 볼륨이 있는 날끼리만 이어줌
   var volPoints=[];
   for(var dd=1;dd<=daysInMonth;dd++){
     var ds=year+"-"+pad(month+1)+"-"+pad(dd);
     var lg=state.logs[ds];
     if(lg&&!lg.rested){
-      var v=state.historySelectedEx?calcExVolume(lg.exercises,state.historySelectedEx):calcVolume(lg.exercises);
-      if(v>0)volPoints.push({d:dd,v:v,ds:ds});
+      var v=calcVolume(lg.exercises); // 일단 전체 볼륨으로 수집
+      volPoints.push({d:dd,v:v,ds:ds});
     }
   }
 
-  var exNames=allLogExNames();
+  // 이 달 로그에 실제 등장하는 운동 이름만 필터 칩에 표시
+  var exNamesThisMonth=[];
+  var _seen={};
+  volPoints.forEach(function(pt){
+    var log=state.logs[pt.ds];
+    if(!log)return;
+    (log.exercises||[]).forEach(function(ex){
+      if(!_seen[ex.name]){_seen[ex.name]=true;exNamesThisMonth.push(ex.name);}
+    });
+  });
+  exNamesThisMonth.sort();
+
   var selEx=state.historySelectedEx;
-  // 운동 선택 드롭다운
+  // 선택된 운동이 이 달에 없으면 자동 해제
+  if(selEx&&!_seen[selEx]){selEx=null;state.historySelectedEx=null;}
+
+  // 운동별 필터 칩
   var dropHtml='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
   dropHtml+='<span style="font-size:13px;font-weight:600;color:#aaa;white-space:nowrap">운동별</span>';
   dropHtml+='<div style="overflow-x:auto;display:flex;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch">';
   dropHtml+='<button data-action="hist-sel-ex" data-name="" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===null?"#111":"#f2f2f7")+';color:'+(selEx===null?"#fff":"#555")+'">전체</button>';
-  exNames.forEach(function(n){
+  exNamesThisMonth.forEach(function(n){
     dropHtml+='<button data-action="hist-sel-ex" data-name="'+n+'" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===n?"#111":"#f2f2f7")+';color:'+(selEx===n?"#fff":"#555")+'">'+n+'</button>';
   });
   dropHtml+='</div></div>';
+
+  // 선택 운동 필터 적용 후 다시 계산
+  if(selEx){
+    volPoints=volPoints.map(function(pt){
+      return {d:pt.d,v:calcExVolume(state.logs[pt.ds].exercises,selEx),ds:pt.ds};
+    });
+  }
+  // v=0 제거 — 운동은 했지만 해당 볼륨이 없는 날은 그래프에서 제외, 운동일끼리만 이어줌
+  volPoints=volPoints.filter(function(pt){return pt.v>0;});
 
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
   chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
@@ -728,6 +748,8 @@ function renderSheet(){
   return '<div class="sheet-overlay"><div class="sheet">'+inner+'</div></div>';
 }
 
+function scrollTop(){window.scrollTo(0,0);}
+
 // 같은 이름의 운동을 모든 요일에 세트 동기화
 function syncExerciseAcrossDays(srcDay, exName, newSets){
   Object.keys(state.routine).forEach(function(day){
@@ -737,8 +759,15 @@ function syncExerciseAcrossDays(srcDay, exName, newSets){
     });
   });
 }
+function syncExerciseAcrossDays(srcDay, exName, newSets){
+  Object.keys(state.routine).forEach(function(day){
+    if(day===srcDay)return;
+    state.routine[day].exercises.forEach(function(ex){
+      if(ex.name===exName) ex.sets=dc(newSets);
+    });
+  });
+}
 
-function scrollTop(){var s=document.getElementById("app-scroll");if(s)s.scrollTop=0;}
 // ── 액션 핸들러 ───────────────────────────────────────────────────────────────
 function handleAction(el,e){
   var a=el.dataset.action;
@@ -962,7 +991,7 @@ function getDragEls(type,day){
 }
 function getDragIdx(el,type){return parseInt(type==="log"?el.dataset.dragIdx:el.dataset.routineDragIdx);}
 function initDragSort(){
-  var app=document.getElementById("app-scroll");
+  var app=document.getElementById("app");
   app.addEventListener("touchstart",function(e){
     var lh=e.target.closest("[data-drag-handle]"),rh=e.target.closest("[data-routine-drag-handle]");
     if(!lh&&!rh)return;
@@ -1017,20 +1046,7 @@ function initDragSort(){
 }
 
 // ── 초기화 ───────────────────────────────────────────────────────────────────
-function setLayoutHeight(){
-  // window.innerHeight = 주소창 제외 실제 높이 (Safari에서 가장 정확)
-  var h=window.innerHeight;
-  document.getElementById("layout").style.height=h+"px";
-}
-
 (function(){
-  setLayoutHeight();
-  window.addEventListener("resize",setLayoutHeight);
-  // iOS에서 주소창이 나타나고 사라질 때 visualViewport 이벤트가 더 정확
-  if(window.visualViewport){
-    window.visualViewport.addEventListener("resize",setLayoutHeight);
-  }
-
   var s=initLogState(state.logDate.str,state.logDate.kr);
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[state.logDate.str];
