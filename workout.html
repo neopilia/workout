@@ -2,9 +2,6 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -35,11 +32,12 @@ body{
 #tabbar{
   position:fixed;
   bottom:0;left:0;right:0;
-  background:#f2f2f7;
-  border-top:0.5px solid #e0e0e0;
+  background:#fff;
+  border-top:0.5px solid #e8e8e8;
   padding:10px 14px;
   padding-bottom:calc(10px + env(safe-area-inset-bottom));
   z-index:100;
+  /* GPU 레이어로 올려서 리페인트와 분리 */
   transform:translateZ(0);
   -webkit-transform:translateZ(0);
   backface-visibility:hidden;
@@ -51,7 +49,8 @@ body{
   padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;}
 
-.tab-seg{display:flex;gap:3px;max-width:390px;margin:0 auto}
+.tab-seg{background:#f2f2f7;border-radius:14px;display:flex;
+  padding:4px;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;
   border-radius:10px;font-size:16px;font-weight:400;color:#888;
   background:none;transition:all 0.15s;font-family:inherit;-webkit-appearance:none}
@@ -314,7 +313,7 @@ function renderToday(){
       rows+='<div class="card-row"><div style="flex:1"><div style="font-size:15px;font-weight:600;color:#111;margin-bottom:5px">'+ex.name+'</div><div style="display:flex;flex-wrap:wrap">'+chips+'</div></div></div>';
     });
   }
-  return '<div class="page-header"><div class="page-title">'+today+'</div>'+(log?'<span class="saved-badge">'+(log.rested?"휴식":"완료")+'</span>':"")+
+  return '<div class="page-header"><div class="page-title">'+today+'</div>'+
     '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
     '</div><div class="card" style="margin-bottom:16px">'+rows+'</div>'+
     '<button class="btn-primary" data-action="go-log">오늘 운동 기록하기</button>';
@@ -351,8 +350,8 @@ function renderRoutine(){
     }
     html+='<div class="card" style="margin-bottom:10px">'+
       '<div style="padding:16px;display:flex;align-items:center;cursor:pointer" data-action="toggle-routine" data-day="'+day+'">'+
-      '<div style="flex:1"><div style="font-size:17px;font-weight:700;color:#111">'+day+'</div>'+
-      '<div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">'+info.name+'</div></div>'+
+      '<div style="flex:1;display:flex;align-items:baseline;gap:8px"><div style="font-size:17px;font-weight:700;color:#111">'+day+'</div>'+
+      '<div style="font-size:13px;color:#aaa;font-weight:500">'+info.name+'</div></div>'+
       '<span style="font-size:12px;color:#ccc;font-weight:600">'+(isOpen?"▲":"▼")+'</span></div>'+body+'</div>';
   });
   html+='<div style="height:8px"></div>';
@@ -389,10 +388,10 @@ function renderLog(){
   var dateHtml=p2.map(function(d){
     var active=ld.str===d.str,log=state.logs[d.str];
     return '<button class="date-seg-btn'+(active?" active":"")+'" data-action="log-date" data-str="'+d.str+'" data-kr="'+d.kr+'" data-label="'+d.label+'">'+
-      d.label+'<br><span style="font-size:12px;opacity:0.7">'+d.kr.replace("요일","")+'</span>'+(log?'<span style="font-size:11px"> '+(log.rested?"휴식":"완료")+'</span>':"")+
+      d.label+'<br><span style="font-size:12px;opacity:0.7">'+d.kr.replace("요일","")+'</span>'+
       '</button>';
   }).join("");
-  return '<div class="page-header"><div class="page-title">기록하기</div>'+(state.logSaved?'<span class="saved-badge">저장됨</span>':"")+
+  return '<div class="page-header"><div class="page-title">기록하기</div>'+
     '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
     '</div><div class="date-seg">'+dateHtml+'</div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" data-action="log-rest">'+
@@ -403,22 +402,26 @@ function renderLog(){
     '<button class="btn-primary" data-action="log-save">저장</button>';
 }
 
-function calcSetVol(s){
-  if(s.incline!=null||s.speed!=null)return(s.min||0)*10;
-  if(s.min)return s.min*10;
-  if((s.w||0)===0)return(s.r||0);
-  return(s.w||0)*(s.r||0);
-}
 function calcVolume(exercises){
   var v=0;
-  (exercises||[]).forEach(function(ex){ex.sets.forEach(function(s){v+=calcSetVol(s);});});
+  (exercises||[]).forEach(function(ex){
+    ex.sets.forEach(function(s){
+      if(s.incline!=null||s.speed!=null){v+=(s.min||0)*10;}
+      else if(s.min){v+=s.min*10;}
+      else{v+=(s.w||0)*(s.r||0);}
+    });
+  });
   return v;
 }
 function calcExVolume(exercises,name){
   var v=0;
   (exercises||[]).forEach(function(ex){
     if(ex.name!==name)return;
-    ex.sets.forEach(function(s){v+=calcSetVol(s);});
+    ex.sets.forEach(function(s){
+      if(s.incline!=null||s.speed!=null){v+=(s.min||0)*10;}
+      else if(s.min){v+=s.min*10;}
+      else{v+=(s.w||0)*(s.r||0);}
+    });
   });
   return v;
 }
@@ -471,12 +474,12 @@ function renderHistory(){
     var bg=log?(log.rested?"#f2f2f7":vol>2000?"#111":vol>800?"#555":"#999"):"#f9f9f9";
     var fg=log?(log.rested?"#aaa":"#fff"):"#999";
     var border=isToday?"2px solid #111":"2px solid transparent";
-    var extra=log&&!log.rested?'data-action="toggle-history" data-date="'+dStr+'"':'';
+    var extra=log?'data-action="open-history-sheet" data-date="'+dStr+'"':'';
     heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%">'+
       '<div '+extra+' style="position:absolute;inset:0;border-radius:8px;background:'+bg+
       ';border:'+border+';display:flex;align-items:center;justify-content:center;'+
       'font-size:12px;font-weight:600;color:'+fg+
-      ';cursor:'+(log&&!log.rested?"pointer":"default")+'">'+d+'</div></div>';
+      ';cursor:'+(log?"pointer":"default")+'">'+d+'</div></div>';
   }
   heatHtml+='</div>';
   heatHtml+='<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">';
@@ -522,10 +525,8 @@ function renderHistory(){
     volPoints=volPoints.map(function(pt){
       return {d:pt.d,v:calcExVolume(state.logs[pt.ds].exercises,selEx),ds:pt.ds};
     });
-    volPoints=volPoints.filter(function(pt){
-      return (state.logs[pt.ds].exercises||[]).some(function(ex){return ex.name===selEx;});
-    });
   }
+  volPoints=volPoints.filter(function(pt){return pt.v>0;});
 
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
   chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
@@ -588,44 +589,43 @@ function renderHistory(){
   }
   chartHtml+='</div></div>';
 
-  var dates=Object.keys(state.logs).filter(function(d){return d.startsWith(ym);}).sort(function(a,b){return b.localeCompare(a);});
-  var listHtml='<div style="padding:0 16px 6px"><span style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px">상세 기록</span></div>';
-  if(!dates.length){
-    listHtml+='<div style="text-align:center;padding:24px 0;color:#bbb;font-size:14px;font-weight:500">이 달에 기록이 없습니다</div>';
-  } else {
-    dates.forEach(function(d){
-      var log=state.logs[d],open=state.historyOpen===d;
-      var vol=log.rested?0:calcVolume(log.exercises);
-      var detail="";
-      if(open){
-        var rows=log.rested?'<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px">휴식</div>':
-          log.exercises.map(function(ex){
-            var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
-              ex.sets.map(function(s){return '<span class="chip-label">'+fmtSet(s)+'</span>';}).join("");
-            return '<div style="padding:12px 0;border-bottom:0.5px solid #f5f5f5"><div style="font-size:15px;font-weight:700;color:#111;margin-bottom:7px">'+ex.name+'</div><div style="display:flex;flex-wrap:wrap;gap:5px">'+chips+'</div></div>';
-          }).join("");
-        if(log.memo)rows+='<div style="padding:12px 0;font-size:14px;color:#888">'+log.memo+'</div>';
-        detail='<div style="padding:0 16px 16px;border-top:0.5px solid #f5f5f5">'+rows+'</div>';
-      }
-      listHtml+='<div class="card" style="margin-bottom:8px">'+
-        '<div style="padding:14px 16px;display:flex;align-items:center;cursor:pointer;gap:10px" data-action="toggle-history" data-date="'+d+'">'+
-        '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#111">'+d.substring(5).replace("-","/")+' <span style="font-weight:500;color:#888;font-size:14px">'+log.day+'</span></div></div>'+
-        (log.rested
-          ?'<span style="font-size:12px;padding:3px 9px;border-radius:99px;background:#f2f2f7;color:#aaa;font-weight:600">휴식</span>'
-          :(vol?'<span style="font-size:12px;padding:3px 9px;border-radius:99px;background:#f2f2f7;color:#555;font-weight:600">'+(vol>=1000?(Math.round(vol/100)/10)+'k':vol)+'</span>':"")
-        )+
-        '<span style="font-size:11px;color:#ddd">'+(open?"▲":"▼")+'</span></div>'+detail+'</div>';
-    });
-  }
-
   return '<div class="page-header"><div class="page-title">통계</div><button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button></div>'+
-    heatHtml+chartHtml+listHtml+'<div style="height:8px"></div>';
+    heatHtml+chartHtml+'<div style="height:8px"></div>';
 }
 
 function renderSettings(){
   var logCount=Object.keys(state.logs).length;
   var exCount=Object.keys(state.routine).reduce(function(n,d){return n+state.routine[d].exercises.length;},0);
 
+  var debugHtml="";
+  var recentDates=Object.keys(state.logs).sort(function(a,b){return b.localeCompare(a);}).slice(0,5);
+  if(recentDates.length){
+    var debugLines=recentDates.map(function(d){
+      var log=state.logs[d];
+      if(log.rested)return d+" → 휴식";
+      var vol=calcVolume(log.exercises);
+      var exInfo=(log.exercises||[]).map(function(ex){
+        var exVol=calcExVolume([ex],ex.name);
+        var setsStr=ex.sets.map(function(s){
+          if(s.incline!=null)return '{경사:'+s.incline+',속도:'+s.speed+',분:'+s.min+'}';
+          if(s.min!=null)return '{분:'+s.min+'}';
+          return '{중량:'+s.w+',횟수:'+s.r+'}';
+        }).join(', ');
+        return '  '+ex.name+' (볼륨:'+exVol+') ['+setsStr+']';
+      }).join('\n');
+      return d+' → 총볼륨:'+vol+'\n'+exInfo;
+    }).join('\n\n');
+    debugHtml='<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
+      '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">📊 데이터 진단 (최근 5일)</div>'+
+      '<pre style="font-size:11px;color:#444;white-space:pre-wrap;word-break:break-all;line-height:1.7;background:#f9f9f9;padding:12px;border-radius:10px;overflow-x:auto">'+debugLines+'</pre>'+
+      '</div></div>';
+  } else {
+    debugHtml='<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
+      '<div style="font-size:14px;color:#bbb;text-align:center">저장된 기록이 없습니다</div></div></div>';
+  }
+
+  return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="18" x2="18" y2="18"/></svg></button></div>'+
+    debugHtml+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">데이터 백업</div>'+
     '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">루틴과 운동 기록 전체를 JSON 파일로 내보냅니다.</div>'+
@@ -707,6 +707,34 @@ function renderSheet(){
       '<button class="sheet-btn-del" data-action="close-sheet">취소</button>'+
       '<button class="sheet-btn-ok" data-action="confirm-ex" data-day="'+s.day+'">추가</button></div>';
   }
+  if(s.type==="historyDetail"){
+    var log=state.logs[s.date];
+    if(!log){inner='<div class="sheet-handle"></div><div style="text-align:center;padding:40px 0;color:#bbb">기록 없음</div>';}
+    else{
+      var vol=log.rested?0:calcVolume(log.exercises);
+      var header='<div class="sheet-handle"></div>'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">'+
+        '<div><div style="font-size:20px;font-weight:800;color:#111;letter-spacing:-0.3px">'+s.date.substring(5).replace('-','/')+' <span style="font-size:16px;font-weight:500;color:#888">'+log.day+'</span></div>'+
+        (vol?'<div style="font-size:13px;color:#aaa;margin-top:3px;font-weight:500">볼륨 '+(vol>=1000?(Math.round(vol/100)/10)+'k':vol)+'</div>':'')+
+        '</div>'+
+        (log.rested?'<span style="font-size:12px;padding:5px 12px;border-radius:99px;background:#f2f2f7;color:#aaa;font-weight:600">휴식</span>':'')+
+        '</div>';
+      var body='';
+      if(log.rested){
+        body='<div style="text-align:center;padding:24px 0;color:#bbb;font-size:15px">휴식일</div>';
+      } else {
+        body=(log.exercises||[]).map(function(ex){
+          var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
+            ex.sets.map(function(s){return '<span class="chip-label">'+fmtSet(s)+'</span>';}).join('');
+          return '<div style="padding:14px 0;border-bottom:0.5px solid #f5f5f5">'+
+            '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:8px">'+ex.name+'</div>'+
+            '<div style="display:flex;flex-wrap:wrap;gap:5px">'+chips+'</div></div>';
+        }).join('');
+        if(log.memo)body+='<div style="padding:14px 0;font-size:14px;color:#888;line-height:1.5">'+log.memo+'</div>';
+      }
+      inner=header+'<div style="overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:60vh">'+body+'</div>';
+    }
+  }
   return '<div class="sheet-overlay"><div class="sheet">'+inner+'</div></div>';
 }
 
@@ -728,6 +756,7 @@ function handleAction(el,e){
   if(a==="settings-back"){state.tab="today";render();scrollTop();return;}
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
+  if(a==="open-history-sheet"){state.sheet={type:"historyDetail",date:el.dataset.date};render();return;}
   if(a==="hist-prev-month"){
     var d=new Date(state.historyMonth+"-01");d.setMonth(d.getMonth()-1);
     state.historyMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);render();return;
