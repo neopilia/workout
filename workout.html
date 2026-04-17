@@ -510,10 +510,11 @@ function renderHistory(){
 
   var dropHtml='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
   dropHtml+='<span style="font-size:13px;font-weight:600;color:#aaa;white-space:nowrap">운동별</span>';
-  dropHtml+='<div style="overflow-x:auto;display:flex;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch">';
-  dropHtml+='<button data-action="hist-sel-ex" data-name="" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===null?"#111":"#f2f2f7")+';color:'+(selEx===null?"#fff":"#555")+'">전체</button>';
+  dropHtml+='<div id="ex-scroll-row" style="overflow-x:auto;display:flex;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch">';
+  dropHtml+='<button data-action="hist-sel-ex" data-name="" id="exbtn-" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===null?"#111":"#f2f2f7")+';color:'+(selEx===null?"#fff":"#555")+'">전체</button>';
   exNamesThisMonth.forEach(function(n){
-    dropHtml+='<button data-action="hist-sel-ex" data-name="'+n+'" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===n?"#111":"#f2f2f7")+';color:'+(selEx===n?"#fff":"#555")+'">'+n+'</button>';
+    var btnId='exbtn-'+n.replace(/[^a-zA-Z0-9]/g,'_');
+    dropHtml+='<button data-action="hist-sel-ex" data-name="'+n+'" id="'+btnId+'" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===n?"#111":"#f2f2f7")+';color:'+(selEx===n?"#fff":"#555")+'">'+n+'</button>';
   });
   dropHtml+='</div></div>';
 
@@ -521,15 +522,17 @@ function renderHistory(){
     volPoints=volPoints.map(function(pt){
       return {d:pt.d,v:calcExVolume(state.logs[pt.ds].exercises,selEx),ds:pt.ds};
     });
+    volPoints=volPoints.filter(function(pt){
+      return (state.logs[pt.ds].exercises||[]).some(function(ex){return ex.name===selEx;});
+    });
   }
-  volPoints=volPoints.filter(function(pt){return pt.v>0;});
 
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
   chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
   chartHtml+=dropHtml;
 
   if(volPoints.length<2){
-    chartHtml+='<div style="text-align:center;padding:32px 0;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
+    chartHtml+='<div style="min-height:140px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
   } else {
     var W=328,H=140,PL=44,PR=12,PT=12,PB=28;
     var gW=W-PL-PR,gH=H-PT-PB;
@@ -734,7 +737,14 @@ function handleAction(el,e){
     state.historyMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);render();return;
   }
   if(a==="hist-sel-ex"){
-    state.historySelectedEx=el.dataset.name||null;render();return;
+    state.historySelectedEx=el.dataset.name||null;
+    render();
+    // 선택한 버튼이 스크롤 영역 안에 보이도록 스크롤
+    var name=state.historySelectedEx;
+    var btnId=name?'exbtn-'+name.replace(/[^a-zA-Z0-9]/g,'_'):'exbtn-';
+    var btn=document.getElementById(btnId);
+    if(btn){btn.scrollIntoView({behavior:'auto',block:'nearest',inline:'center'});}
+    return;
   }
   if(a==="routine-set"){state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,ei:parseInt(el.dataset.ei),si:parseInt(el.dataset.si||0)};render();return;}
   if(a==="routine-add-set"){
