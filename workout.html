@@ -30,11 +30,11 @@ body{
 }
 #tabbar{
   position:fixed;
-  bottom:0;left:0;right:0;
+  bottom:env(safe-area-inset-bottom);
+  left:0;right:0;
   background:#fff;
   border-top:0.5px solid #e8e8e8;
   padding:10px 14px;
-  padding-bottom:calc(10px + env(safe-area-inset-bottom));
   z-index:100;
 }
 .settings-btn{background:none;border:none;cursor:pointer;padding:6px;
