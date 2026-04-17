@@ -17,15 +17,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
   -webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
 
+/* 설정 아이콘 — page-header 안에 인라인 배치 */
 .settings-btn{background:none;border:none;cursor:pointer;
   font-size:22px;color:#bbb;padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0}
 
+/* 하단 탭바 — 절대 움직이지 않도록 will-change + transform3d */
 #tabbar{
   position:fixed;bottom:0;left:0;right:0;
   background:#fff;border-top:0.5px solid #e8e8e8;
   padding:10px 14px;
   padding-bottom:calc(10px + max(var(--safe-bot),6px));
   z-index:50;
+  /* GPU 레이어 고정 — 리페인트 시 위치 흔들림 방지 */
   will-change:transform;
   transform:translate3d(0,0,0);
   -webkit-transform:translate3d(0,0,0);
@@ -123,12 +126,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
 </head>
 <body>
 <div id="app"></div>
+<!-- 탭바는 HTML에 정적으로 존재 — JS가 innerHTML을 갈지 않고 클래스만 업데이트 -->
 <div id="tabbar">
   <div class="tab-seg">
     <button class="tab-btn active" data-tab="today">오늘</button>
     <button class="tab-btn" data-tab="routine">루틴</button>
     <button class="tab-btn" data-tab="log">기록</button>
-    <button class="tab-btn" data-tab="history">통계</button>
+    <button class="tab-btn" data-tab="history">조회</button>
   </div>
 </div>
 <script>
@@ -215,17 +219,17 @@ var state={
   routineOpenDay:null,historyOpen:null,
   logDate:{str:todayStr(),kr:todayKr(),label:"오늘"},
   logRested:false,logSets:[],logMemo:"",logSaved:false,
-  logRoutineSync:null,sheet:null,
-  historySelectedEx:null,historyMonth:null
+  logRoutineSync:null,sheet:null
 };
 
 function initLogState(dStr,dayKr){
   var log=state.logs[dStr];
-  if(log)return{rested:log.rested||false,sets:dc(log.exercises||[]),memo:log.memo||""};
+  if(log)return{rested:log.rested||false,sets:dc(log.exercises),memo:log.memo||""};
   var info=state.routine[dayKr];
   return{rested:false,sets:info?info.exercises.map(function(ex){return{name:ex.name,sets:dc(ex.sets)};}):[],memo:""};
 }
 
+// ── 탭바 active 클래스만 갱신 (innerHTML 재작성 없음) ─────────────────────────
 function updateTabBar(){
   var btns=document.querySelectorAll("#tabbar .tab-btn");
   btns.forEach(function(b){
@@ -236,7 +240,9 @@ function updateTabBar(){
 
 // ── 렌더 ─────────────────────────────────────────────────────────────────────
 function render(){
+  // 탭바는 클래스만 업데이트 — DOM 재작성 금지
   updateTabBar();
+
   var pages={today:renderToday,routine:renderRoutine,log:renderLog,
              history:renderHistory,settings:renderSettings};
   document.getElementById("app").innerHTML=(pages[state.tab]||renderToday)();
@@ -279,7 +285,7 @@ function renderRoutine(){
         rows='<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식일</div>';
       } else {
         info.exercises.forEach(function(ex,i){
-          // ✅ FIX 1: data-si 를 세트 인덱스로 올바르게 전달
+          // FIX: data-si 속성 추가하여 세트 인덱스 전달
           var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
             ex.sets.map(function(s,si){return '<button class="set-chip" data-action="routine-set" data-day="'+day+'" data-ei="'+i+'" data-si="'+si+'">'+fmtSet(s)+'</button>';}).join("");
           rows+='<div data-routine-drag-day="'+day+'" data-routine-drag-idx="'+i+'" style="display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:0.5px solid #f5f5f5">'+
@@ -353,207 +359,35 @@ function renderLog(){
     '<button class="btn-primary" data-action="log-save">저장</button>';
 }
 
-// ── 볼륨 계산 ─────────────────────────────────────────────────────────────────
-function calcVolume(exercises){
-  var v=0;
-  (exercises||[]).forEach(function(ex){
-    (ex.sets||[]).forEach(function(s){
-      if(s.min){v+=s.min*10;}
-      else{v+=(s.w||0)*(s.r||0);}
-    });
-  });
-  return v;
-}
-function calcExVolume(exercises,name){
-  var v=0;
-  (exercises||[]).forEach(function(ex){
-    if(ex.name!==name)return;
-    (ex.sets||[]).forEach(function(s){
-      if(s.min){v+=s.min*10;}
-      else{v+=(s.w||0)*(s.r||0);}
-    });
-  });
-  return v;
-}
-function allLogExNames(){
-  var seen={},res=[];
-  Object.keys(state.logs).forEach(function(d){
-    (state.logs[d].exercises||[]).forEach(function(ex){
-      if(!seen[ex.name]){seen[ex.name]=true;res.push(ex.name);}
-    });
-  });
-  return res.sort();
-}
-
-// ── 통계 ─────────────────────────────────────────────────────────────────────
+// ── 기록 보기 ─────────────────────────────────────────────────────────────────
 function renderHistory(){
-  var now=new Date();
-  if(!state.historyMonth){
-    state.historyMonth=now.getFullYear()+"-"+pad(now.getMonth()+1);
-  }
-  var ym=state.historyMonth;
-  var ymDate=new Date(ym+"-01");
-  var year=ymDate.getFullYear(),month=ymDate.getMonth();
-  var daysInMonth=new Date(year,month+1,0).getDate();
-  var firstDow=(new Date(year,month,1).getDay()+6)%7;
-
-  var allDates=Object.keys(state.logs).sort();
-  var minYm=allDates.length?allDates[0].substring(0,7):"";
-  var nowYm=now.getFullYear()+"-"+pad(now.getMonth()+1);
-  var canPrev=minYm&&ym>minYm;
-  var canNext=ym<nowYm;
-
-  var DAY_LABELS=["월","화","수","목","금","토","일"];
-  var heatHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px 16px 14px">';
-  heatHtml+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
-  heatHtml+='<button data-action="hist-prev-month" style="width:32px;height:32px;border:none;background:#f2f2f7;border-radius:10px;font-size:16px;cursor:pointer;color:'+(canPrev?"#111":"#ddd")+'" '+(canPrev?"":" disabled")+'>‹</button>';
-  heatHtml+='<span style="font-size:16px;font-weight:700;color:#111">'+year+'년 '+(month+1)+'월</span>';
-  heatHtml+='<button data-action="hist-next-month" style="width:32px;height:32px;border:none;background:#f2f2f7;border-radius:10px;font-size:16px;cursor:pointer;color:'+(canNext?"#111":"#ddd")+'" '+(canNext?"":" disabled")+'>›</button>';
-  heatHtml+='</div>';
-  heatHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">';
-  DAY_LABELS.forEach(function(l,i){
-    heatHtml+='<div style="text-align:center;font-size:11px;font-weight:600;color:'+(i===5?"#5b8cf5":i===6?"#e05b5b":"#aaa")+'">'+l+'</div>';
-  });
-  heatHtml+='</div>';
-  heatHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
-  for(var i=0;i<firstDow;i++){heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%"></div>';}
-  for(var d=1;d<=daysInMonth;d++){
-    var dStr=year+"-"+pad(month+1)+"-"+pad(d);
-    var log=state.logs[dStr];
-    var isToday=dStr===todayStr();
-    var vol=log&&!log.rested?calcVolume(log.exercises):0;
-    var bg=log?(log.rested?"#f2f2f7":vol>2000?"#111":vol>800?"#555":"#999"):"#f9f9f9";
-    var fg=log?(log.rested?"#aaa":"#fff"):"#999";
-    var border=isToday?"2px solid #111":"2px solid transparent";
-    // ✅ FIX 2: 휴식일도 toggle-history 가능하게 수정 (모든 기록된 날짜 클릭 가능)
-    var hasLog=!!log;
-    var extra=hasLog?'data-action="toggle-history" data-date="'+dStr+'"':'';
-    heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%">'+
-      '<div '+extra+' style="position:absolute;inset:0;border-radius:8px;background:'+bg+
-      ';border:'+border+';display:flex;align-items:center;justify-content:center;'+
-      'font-size:12px;font-weight:600;color:'+fg+
-      ';cursor:'+(hasLog?"pointer":"default")+'">'+d+'</div></div>';
-  }
-  heatHtml+='</div>';
-  heatHtml+='<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">';
-  [["transparent","#111","미기록"],["#f2f2f7","#aaa","휴식"],["#999","#fff","운동(낮음)"],["#555","#fff","보통"],["#111","#fff","높음"]].forEach(function(c){
-    heatHtml+='<div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:3px;background:'+c[0]+';border:1px solid #e0e0e0"></div><span style="font-size:11px;color:#888">'+c[2]+'</span></div>';
-  });
-  heatHtml+='</div></div></div>';
-
-  var volPoints=[];
-  for(var dd=1;dd<=daysInMonth;dd++){
-    var ds=year+"-"+pad(month+1)+"-"+pad(dd);
-    var lg=state.logs[ds];
-    if(lg&&!lg.rested){
-      var v=state.historySelectedEx?calcExVolume(lg.exercises,state.historySelectedEx):calcVolume(lg.exercises);
-      if(v>0)volPoints.push({d:dd,v:v,ds:ds});
-    }
-  }
-
-  var exNames=allLogExNames();
-  var selEx=state.historySelectedEx;
-  var dropHtml='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
-  dropHtml+='<span style="font-size:13px;font-weight:600;color:#aaa;white-space:nowrap">운동별</span>';
-  dropHtml+='<div style="overflow-x:auto;display:flex;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch">';
-  dropHtml+='<button data-action="hist-sel-ex" data-name="" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===null?"#111":"#f2f2f7")+';color:'+(selEx===null?"#fff":"#555")+'">전체</button>';
-  exNames.forEach(function(n){
-    dropHtml+='<button data-action="hist-sel-ex" data-name="'+n+'" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===n?"#111":"#f2f2f7")+';color:'+(selEx===n?"#fff":"#555")+'">'+n+'</button>';
-  });
-  dropHtml+='</div></div>';
-
-  var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
-  chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
-  chartHtml+=dropHtml;
-
-  if(volPoints.length<2){
-    chartHtml+='<div style="text-align:center;padding:32px 0;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
-  } else {
-    var W=328,H=140,PL=44,PR=12,PT=12,PB=28;
-    var gW=W-PL-PR,gH=H-PT-PB;
-    var maxV=Math.max.apply(null,volPoints.map(function(p){return p.v;}));
-    var minV=Math.min.apply(null,volPoints.map(function(p){return p.v;}));
-    var vRange=maxV-minV||1;
-    function xp(i){return PL+i/(volPoints.length-1)*gW;}
-    function yp(v){return PT+gH-(v-minV)/vRange*gH;}
-
-    var aPath="M"+xp(0)+","+yp(volPoints[0].v);
-    for(var i=1;i<volPoints.length;i++){
-      var x0=xp(i-1),y0=yp(volPoints[i-1].v),x1=xp(i),y1=yp(volPoints[i].v);
-      var cx=(x0+x1)/2;
-      aPath+=" C"+cx+","+y0+" "+cx+","+y1+" "+x1+","+y1;
-    }
-    var fillPath=aPath+" L"+xp(volPoints.length-1)+","+(PT+gH)+" L"+xp(0)+","+(PT+gH)+" Z";
-    var linePath=aPath;
-
-    var yTicks=[];
-    for(var t=0;t<3;t++){
-      var tv=minV+vRange*t/2;
-      yTicks.push({v:Math.round(tv),y:yp(tv)});
-    }
-
-    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible" xmlns="http://www.w3.org/2000/svg">';
-    yTicks.forEach(function(tk){
-      svg+='<line x1="'+PL+'" y1="'+tk.y+'" x2="'+(W-PR)+'" y2="'+tk.y+'" stroke="#f0f0f0" stroke-width="1"/>';
-      svg+='<text x="'+(PL-6)+'" y="'+(tk.y+4)+'" text-anchor="end" font-size="10" fill="#bbb">'+
-        (tk.v>=1000?Math.round(tk.v/100)/10+'k':tk.v)+'</text>';
-    });
-    var step=Math.ceil(volPoints.length/6);
-    volPoints.forEach(function(p,i){
-      if(i%step!==0&&i!==volPoints.length-1)return;
-      svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'일</text>';
-    });
-    svg+='<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111" stop-opacity="0.10"/><stop offset="100%" stop-color="#111" stop-opacity="0.01"/></linearGradient></defs>';
-    svg+='<path d="'+fillPath+'" fill="url(#vg)"/>';
-    svg+='<path d="'+linePath+'" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-    volPoints.forEach(function(p,i){
-      svg+='<circle cx="'+xp(i)+'" cy="'+yp(p.v)+'" r="3.5" fill="#111" stroke="#fff" stroke-width="1.5"/>';
-    });
-    svg+='</svg>';
-    chartHtml+=svg;
-
-    var totalVol=volPoints.reduce(function(s,p){return s+p.v;},0);
-    var avgVol=Math.round(totalVol/volPoints.length);
-    var maxPt=volPoints.reduce(function(a,b){return a.v>b.v?a:b;});
-    chartHtml+='<div style="display:flex;gap:0;margin-top:14px;border-top:0.5px solid #f5f5f5;padding-top:14px">';
-    [[volPoints.length+"회","운동일"],[avgVol>=1000?(Math.round(avgVol/100)/10)+"k":avgVol,"평균 볼륨"],[maxPt.v>=1000?(Math.round(maxPt.v/100)/10)+"k":maxPt.v,"최고 볼륨"]].forEach(function(s){
-      chartHtml+='<div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#111">'+s[0]+'</div><div style="font-size:11px;color:#aaa;font-weight:500;margin-top:2px">'+s[1]+'</div></div>';
-    });
-    chartHtml+='</div>';
-  }
-  chartHtml+='</div></div>';
-
-  var dates=Object.keys(state.logs).filter(function(d){return d.startsWith(ym);}).sort(function(a,b){return b.localeCompare(a);});
-  var listHtml='<div style="padding:0 16px 6px"><span style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px">상세 기록</span></div>';
+  var dates=Object.keys(state.logs).sort(function(a,b){return b.localeCompare(a);});
+  var html='<div class="page-header"><div class="page-title">기록 보기</div><button class="settings-btn" data-action="go-settings">⚙</button></div>';
   if(!dates.length){
-    listHtml+='<div style="text-align:center;padding:24px 0;color:#bbb;font-size:14px;font-weight:500">이 달에 기록이 없습니다</div>';
+    html+='<div style="text-align:center;padding:60px 0;color:#bbb;font-size:15px;font-weight:500">아직 기록이 없습니다</div>';
   } else {
     dates.forEach(function(d){
       var log=state.logs[d],open=state.historyOpen===d;
-      var vol=log.rested?0:calcVolume(log.exercises);
       var detail="";
       if(open){
         var rows=log.rested?'<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px">휴식</div>':
-          (log.exercises||[]).map(function(ex){
-            var chips=(ex.sets||[]).length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
+          log.exercises.map(function(ex){
+            var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
               ex.sets.map(function(s){return '<span class="chip-label">'+fmtSet(s)+'</span>';}).join("");
             return '<div style="padding:12px 0;border-bottom:0.5px solid #f5f5f5"><div style="font-size:15px;font-weight:700;color:#111;margin-bottom:7px">'+ex.name+'</div><div style="display:flex;flex-wrap:wrap;gap:5px">'+chips+'</div></div>';
           }).join("");
         if(log.memo)rows+='<div style="padding:12px 0;font-size:14px;color:#888">'+log.memo+'</div>';
         detail='<div style="padding:0 16px 16px;border-top:0.5px solid #f5f5f5">'+rows+'</div>';
       }
-      listHtml+='<div class="card" style="margin-bottom:8px">'+
-        '<div style="padding:14px 16px;display:flex;align-items:center;cursor:pointer;gap:10px" data-action="toggle-history" data-date="'+d+'">'+
-        '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#111">'+d.substring(5).replace("-","/")+' <span style="font-weight:500;color:#888;font-size:14px">'+(log.day||"")+'</span></div>'+
-        (!log.rested&&vol?'<div style="font-size:12px;color:#aaa;margin-top:2px">볼륨 '+(vol>=1000?(Math.round(vol/100)/10)+'k':vol)+'</div>':"")+
-        '</div>'+
-        (log.rested?'<span style="font-size:12px;padding:3px 9px;border-radius:99px;background:#f2f2f7;color:#aaa;font-weight:600">휴식</span>':"")+
-        '<span style="font-size:11px;color:#ddd">'+(open?"▲":"▼")+'</span></div>'+detail+'</div>';
+      html+='<div class="card" style="margin-bottom:10px">'+
+        '<div style="padding:16px;display:flex;align-items:center;cursor:pointer" data-action="toggle-history" data-date="'+d+'">'+
+        '<div style="flex:1"><div style="font-size:17px;font-weight:700;color:#111">'+d+'</div>'+
+        '<div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">'+log.day+'</div></div>'+
+        (log.rested?'<span style="font-size:12px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#888;font-weight:600;margin-right:8px">휴식</span>':"")+
+        '<span style="font-size:12px;color:#ccc;font-weight:600">'+(open?"▲":"▼")+'</span></div>'+detail+'</div>';
     });
   }
-
-  return '<div class="page-header"><div class="page-title">통계</div><button class="settings-btn" data-action="go-settings">⚙</button></div>'+
-    heatHtml+chartHtml+listHtml+'<div style="height:8px"></div>';
+  return html;
 }
 
 // ── 설정 ─────────────────────────────────────────────────────────────────────
@@ -569,7 +403,7 @@ function renderSettings(){
     '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">데이터 복원</div>'+
     '<div style="font-size:14px;color:#888;margin-bottom:14px">백업 파일로 기존 데이터를 복원합니다.</div>'+
     '<button class="btn-secondary" data-action="restore" style="margin:0">백업 파일 불러오기</button>'+
-    // ✅ FIX 5: file input을 settings 탭이 아닌 body에 항상 존재하도록 이동 (아래 initEvents에서 처리)
+    '<input type="file" id="restore-file" accept=".json" style="display:none">'+
     '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:16px">'+
     '<div style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:10px">루틴 내보내기</div>'+
     '<button class="btn-secondary" data-action="export" style="margin:0">텍스트 파일로 내보내기</button>'+
@@ -587,9 +421,7 @@ function renderSheet(){
   var s=state.sheet;if(!s)return"";
   var inner="";
   if(s.type==="setEdit"){
-    // ✅ FIX 1 (continued): src에 따라 올바른 세트를 참조
     var ex=s.src==="log"?state.logSets[s.ei]:state.routine[s.day].exercises[s.ei];
-    if(!ex||!ex.sets[s.si]){state.sheet=null;return"";}
     var set=ex.sets[s.si],pfx=s.src==="log"?"sv":"rv";
     inner='<div class="sheet-handle"></div><div class="sheet-title">'+ex.name+' · 세트 '+(s.si+1)+'</div>';
     if(set.min!=null){
@@ -634,28 +466,21 @@ function renderSheet(){
 // ── 액션 핸들러 ───────────────────────────────────────────────────────────────
 function handleAction(el,e){
   var a=el.dataset.action;
-  if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();window.scrollTo(0,0);return;}
+  // FIX: go-log 시 logDate를 항상 오늘로 리셋하여 상태 불일치 방지
+  if(a==="go-log"){
+    state.tab="log";
+    state.logDate={str:todayStr(),kr:todayKr(),label:"오늘"};
+    var ls0=initLogState(state.logDate.str,state.logDate.kr);
+    state.logRested=ls0.rested;state.logSets=ls0.sets;state.logMemo=ls0.memo;
+    state.logSaved=!!state.logs[state.logDate.str];
+    state.logRoutineSync=null;render();window.scrollTo(0,0);return;
+  }
   if(a==="go-settings"){state.tab="settings";render();window.scrollTo(0,0);return;}
   if(a==="settings-back"){state.tab="today";render();window.scrollTo(0,0);return;}
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
-  if(a==="hist-prev-month"){
-    var dm=new Date(state.historyMonth+"-01");dm.setMonth(dm.getMonth()-1);
-    state.historyMonth=dm.getFullYear()+"-"+pad(dm.getMonth()+1);render();return;
-  }
-  if(a==="hist-next-month"){
-    var dm=new Date(state.historyMonth+"-01");dm.setMonth(dm.getMonth()+1);
-    state.historyMonth=dm.getFullYear()+"-"+pad(dm.getMonth()+1);render();return;
-  }
-  if(a==="hist-sel-ex"){
-    state.historySelectedEx=el.dataset.name||null;render();return;
-  }
-  // ✅ FIX 1 (handler): si를 data-si에서 올바르게 읽음
-  if(a==="routine-set"){
-    state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,
-      ei:parseInt(el.dataset.ei),si:parseInt(el.dataset.si||0)};
-    render();return;
-  }
+  // FIX: data-si를 읽어 정확한 세트 인덱스 전달
+  if(a==="routine-set"){state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,ei:parseInt(el.dataset.ei),si:parseInt(el.dataset.si)};render();return;}
   if(a==="routine-add-set"){
     var ex=state.routine[el.dataset.day].exercises[parseInt(el.dataset.ei)];
     ex.sets.push(dc(ex.sets[ex.sets.length-1]||{w:0,r:10}));saveR(state.routine);render();return;
@@ -668,17 +493,8 @@ function handleAction(el,e){
   if(a==="open-add-ex"){state.sheet={type:"addEx",day:el.dataset.day};render();return;}
   if(a==="sel-ex"){
     var name=el.dataset.name,day2=el.dataset.day;
-    if(day2==="__log__"){
-      // ✅ FIX 4: 기록 탭에서 이미 있는 운동은 중복 추가 방지
-      var already=state.logSets.some(function(ls){return ls.name===name;});
-      if(already){showToast(name+" 은(는) 이미 추가되어 있습니다");state.sheet=null;render();return;}
-      state.logSets.push({name:name,sets:exRefSets(name)});state.logSaved=false;
-    } else {
-      // ✅ FIX 4: 루틴에서도 같은 날에 중복 운동 추가 방지
-      var alreadyR=state.routine[day2].exercises.some(function(re){return re.name===name;});
-      if(alreadyR){showToast(name+" 은(는) 이미 추가되어 있습니다");state.sheet=null;render();return;}
-      state.routine[day2].exercises.push({name:name,sets:exRefSets(name)});saveR(state.routine);
-    }
+    if(day2==="__log__"){state.logSets.push({name:name,sets:exRefSets(name)});state.logSaved=false;}
+    else{state.routine[day2].exercises.push({name:name,sets:exRefSets(name)});saveR(state.routine);}
     state.sheet=null;render();return;
   }
   if(a==="new-ex"){state.sheet={type:"newEx",day:el.dataset.day,exType:"weight"};render();setTimeout(function(){var inp=document.getElementById("new-ex-name");if(inp)inp.focus();},100);return;}
@@ -692,19 +508,11 @@ function handleAction(el,e){
   if(a==="confirm-ex"){
     var inp=document.getElementById("new-ex-name");
     var nm=(inp?inp.value:"").trim();if(!nm)return;
-    // ✅ FIX 4: 새 운동 추가 시 이름 중복 체크
     var t2=state.sheet.exType||"weight";
     var defSet=t2==="weight"?{w:20,r:10}:t2==="reps"?{w:0,r:10}:{w:0,r:0,min:20};
     var day3=el.dataset.day;
-    if(day3==="__log__"){
-      var dupLog=state.logSets.some(function(ls){return ls.name===nm;});
-      if(dupLog){showToast("같은 이름의 운동이 이미 있습니다");return;}
-      state.logSets.push({name:nm,sets:[defSet]});state.logSaved=false;
-    } else {
-      var dupR=state.routine[day3].exercises.some(function(re){return re.name===nm;});
-      if(dupR){showToast("같은 이름의 운동이 이미 있습니다");return;}
-      state.routine[day3].exercises.push({name:nm,sets:[defSet]});saveR(state.routine);
-    }
+    if(day3==="__log__"){state.logSets.push({name:nm,sets:[defSet]});state.logSaved=false;}
+    else{state.routine[day3].exercises.push({name:nm,sets:[defSet]});saveR(state.routine);}
     state.sheet=null;render();return;
   }
   if(a==="log-date"){
@@ -733,9 +541,9 @@ function handleAction(el,e){
       var changed=false;
       state.routine[ld.kr].exercises=state.routine[ld.kr].exercises.map(function(re){
         if(state.logRoutineSync[re.name]){
-          var lg2=null;
-          state.logSets.forEach(function(ls2){if(ls2.name===re.name)lg2=ls2;});
-          if(lg2){changed=true;return Object.assign({},re,{sets:dc(lg2.sets)});}
+          var lg=null;
+          state.logSets.forEach(function(ls2){if(ls2.name===re.name)lg=ls2;});
+          if(lg){changed=true;return Object.assign({},re,{sets:dc(lg.sets)});}
         }
         return re;
       });
@@ -745,11 +553,8 @@ function handleAction(el,e){
     showToast((ld.label==="오늘"?"오늘":ld.label)+" 운동이 저장되었습니다");return;
   }
   if(a==="step"){
-    var s2=state.sheet;
-    if(!s2)return;
-    var field=el.dataset.field,delta=parseFloat(el.dataset.delta);
+    var s2=state.sheet,field=el.dataset.field,delta=parseFloat(el.dataset.delta);
     var set2=s2.src==="log"?state.logSets[s2.ei].sets[s2.si]:state.routine[s2.day].exercises[s2.ei].sets[s2.si];
-    if(!set2)return;
     set2[field]=Math.max(0,Math.round(((set2[field]||0)+delta)*10)/10);
     if(s2.src==="routine")saveR(state.routine);else state.logSaved=false;
     var valEl=document.getElementById((s2.src==="log"?"sv":"rv")+"-"+field);if(valEl)valEl.textContent=set2[field];
@@ -757,7 +562,6 @@ function handleAction(el,e){
   }
   if(a==="del-set"){
     var s3=state.sheet;
-    if(!s3)return;
     if(s3.src==="log"){state.logSets[s3.ei].sets.splice(s3.si,1);state.logSaved=false;}
     else{state.routine[s3.day].exercises[s3.ei].sets.splice(s3.si,1);saveR(state.routine);}
     state.sheet=null;render();return;
@@ -768,27 +572,24 @@ function handleAction(el,e){
   if(a==="restore"){restore();return;}
 }
 
-// ── 이벤트 ───────────────────────────────────────────────────────────────────
+// ── 이벤트 (최초 1회) ────────────────────────────────────────────────────────
 function initEvents(){
+  // 탭바 클릭 — 탭바 DOM은 절대 재작성하지 않음
   document.getElementById("tabbar").addEventListener("click",function(e){
     var btn=e.target.closest(".tab-btn");
     if(!btn||!btn.dataset.tab)return;
-    var newTab=btn.dataset.tab;
-    // ✅ FIX 2: 기록 탭으로 돌아올 때 루틴이 바뀌었을 수 있으니 logSets 재초기화
-    if(newTab==="log"&&state.tab!=="log"&&!state.logs[state.logDate.str]){
-      var ls=initLogState(state.logDate.str,state.logDate.kr);
-      state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
-      state.logSaved=false;
-    }
-    state.tab=newTab;state.logRoutineSync=null;render();window.scrollTo(0,0);
+    state.tab=btn.dataset.tab;state.logRoutineSync=null;render();window.scrollTo(0,0);
   });
+  // 전체 위임
   document.addEventListener("click",function(e){
     if(e.target.classList&&e.target.classList.contains("sheet-overlay")){state.sheet=null;render();return;}
     var el=e.target.closest("[data-action]");
     if(!el)return;
+    // 탭바 버튼은 위에서 이미 처리
     if(el.closest("#tabbar"))return;
     handleAction(el,e);
   });
+  // textarea
   document.addEventListener("input",function(e){
     if(e.target.dataset&&e.target.dataset.action==="log-memo"){state.logMemo=e.target.value;state.logSaved=false;}
   });
@@ -832,17 +633,10 @@ function backup(){
   a.href=url;a.download="workout_backup_"+todayStr()+".json";
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
-
-// ✅ FIX 5: restore용 file input을 body에 영구적으로 생성 (탭에 종속되지 않음)
-var restoreFileInput=(function(){
-  var inp=document.createElement("input");
-  inp.type="file";inp.accept=".json";inp.style.display="none";
-  document.body.appendChild(inp);
-  return inp;
-})();
-
 function restore(){
-  restoreFileInput.onchange=function(e){
+  var inp=document.getElementById("restore-file");
+  if(!inp)return;
+  inp.onchange=function(e){
     var file=e.target.files[0];if(!file)return;
     var reader=new FileReader();
     reader.onload=function(ev){
@@ -860,7 +654,7 @@ function restore(){
     };
     reader.readAsText(file);
   };
-  restoreFileInput.value="";restoreFileInput.click();
+  inp.value="";inp.click();
 }
 
 // ── 드래그 정렬 ──────────────────────────────────────────────────────────────
@@ -905,23 +699,19 @@ function initDragSort(){
     }
     e.preventDefault();
   },{passive:false});
-
-  // ✅ FIX 6: drag 중 ghost가 없어진 경우 방어 처리
   function endDrag(){
     if(!drag)return;
-    try{
-      if(drag.ghost&&drag.ghost.parentNode)drag.ghost.remove();
-      getDragEls(drag.type,drag.day).forEach(function(el){el.style.opacity="";el.style.outline="";});
-      if(drag.target!==drag.idx){
-        if(drag.type==="log"){
-          var arr=state.logSets.slice(),item=arr.splice(drag.idx,1)[0];arr.splice(drag.target,0,item);
-          state.logSets=arr;state.logSaved=false;
-        } else {
-          var exs=state.routine[drag.day].exercises.slice(),ex=exs.splice(drag.idx,1)[0];exs.splice(drag.target,0,ex);
-          state.routine[drag.day].exercises=exs;saveR(state.routine);
-        }
+    drag.ghost.remove();
+    getDragEls(drag.type,drag.day).forEach(function(el){el.style.opacity="";el.style.outline="";});
+    if(drag.target!==drag.idx){
+      if(drag.type==="log"){
+        var arr=state.logSets.slice(),item=arr.splice(drag.idx,1)[0];arr.splice(drag.target,0,item);
+        state.logSets=arr;state.logSaved=false;
+      } else {
+        var exs=state.routine[drag.day].exercises.slice(),ex=exs.splice(drag.idx,1)[0];exs.splice(drag.target,0,ex);
+        state.routine[drag.day].exercises=exs;saveR(state.routine);
       }
-    }catch(err){console.warn("drag end error:",err);}
+    }
     drag=null;render();
   }
   app.addEventListener("touchend",endDrag);
