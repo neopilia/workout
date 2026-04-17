@@ -525,12 +525,8 @@ function renderHistory(){
     volPoints=volPoints.map(function(pt){
       return {d:pt.d,v:calcExVolume(state.logs[pt.ds].exercises,selEx),ds:pt.ds};
     });
-    // 선택한 운동이 실제로 있는 날만 표시 (볼륨 0이어도 포함)
-    volPoints=volPoints.filter(function(pt){
-      return (state.logs[pt.ds].exercises||[]).some(function(ex){return ex.name===selEx;});
-    });
   }
-  // 전체 보기일 때는 운동한 날이면 볼륨 0이어도 포함 (맨몸 운동만 한 경우)
+  volPoints=volPoints.filter(function(pt){return pt.v>0;});
 
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
   chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
@@ -631,35 +627,7 @@ function renderSettings(){
   var logCount=Object.keys(state.logs).length;
   var exCount=Object.keys(state.routine).reduce(function(n,d){return n+state.routine[d].exercises.length;},0);
 
-  var debugHtml="";
-  var recentDates=Object.keys(state.logs).sort(function(a,b){return b.localeCompare(a);}).slice(0,5);
-  if(recentDates.length){
-    var debugLines=recentDates.map(function(d){
-      var log=state.logs[d];
-      if(log.rested)return d+" → 휴식";
-      var vol=calcVolume(log.exercises);
-      var exInfo=(log.exercises||[]).map(function(ex){
-        var exVol=calcExVolume([ex],ex.name);
-        var setsStr=ex.sets.map(function(s){
-          if(s.incline!=null)return '{경사:'+s.incline+',속도:'+s.speed+',분:'+s.min+'}';
-          if(s.min!=null)return '{분:'+s.min+'}';
-          return '{중량:'+s.w+',횟수:'+s.r+'}';
-        }).join(', ');
-        return '  '+ex.name+' (볼륨:'+exVol+') ['+setsStr+']';
-      }).join('\n');
-      return d+' → 총볼륨:'+vol+'\n'+exInfo;
-    }).join('\n\n');
-    debugHtml='<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
-      '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">📊 데이터 진단 (최근 5일)</div>'+
-      '<pre style="font-size:11px;color:#444;white-space:pre-wrap;word-break:break-all;line-height:1.7;background:#f9f9f9;padding:12px;border-radius:10px;overflow-x:auto">'+debugLines+'</pre>'+
-      '</div></div>';
-  } else {
-    debugHtml='<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
-      '<div style="font-size:14px;color:#bbb;text-align:center">저장된 기록이 없습니다</div></div></div>';
-  }
-
   return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="18" x2="18" y2="18"/></svg></button></div>'+
-    debugHtml+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">데이터 백업</div>'+
     '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">루틴과 운동 기록 전체를 JSON 파일로 내보냅니다.</div>'+
