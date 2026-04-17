@@ -132,7 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;
     <button class="tab-btn active" data-tab="today">오늘</button>
     <button class="tab-btn" data-tab="routine">루틴</button>
     <button class="tab-btn" data-tab="log">기록</button>
-    <button class="tab-btn" data-tab="history">조회</button>
+    <button class="tab-btn" data-tab="history">통계</button>
   </div>
 </div>
 <script>
@@ -219,7 +219,8 @@ var state={
   routineOpenDay:null,historyOpen:null,
   logDate:{str:todayStr(),kr:todayKr(),label:"오늘"},
   logRested:false,logSets:[],logMemo:"",logSaved:false,
-  logRoutineSync:null,sheet:null
+  logRoutineSync:null,sheet:null,
+  historySelectedEx:null,historyMonth:null
 };
 
 function initLogState(dStr,dayKr){
@@ -358,15 +359,202 @@ function renderLog(){
     '<button class="btn-primary" data-action="log-save">저장</button>';
 }
 
-// ── 기록 보기 ─────────────────────────────────────────────────────────────────
+// ── 볼륨 계산 ─────────────────────────────────────────────────────────────────
+function calcVolume(exercises){
+  var v=0;
+  (exercises||[]).forEach(function(ex){
+    ex.sets.forEach(function(s){
+      if(s.min){v+=s.min*10;}
+      else{v+=(s.w||0)*(s.r||0);}
+    });
+  });
+  return v;
+}
+function calcExVolume(exercises,name){
+  var v=0;
+  (exercises||[]).forEach(function(ex){
+    if(ex.name!==name)return;
+    ex.sets.forEach(function(s){
+      if(s.min){v+=s.min*10;}
+      else{v+=(s.w||0)*(s.r||0);}
+    });
+  });
+  return v;
+}
+function allLogExNames(){
+  var seen={},res=[];
+  Object.keys(state.logs).forEach(function(d){
+    (state.logs[d].exercises||[]).forEach(function(ex){
+      if(!seen[ex.name]){seen[ex.name]=true;res.push(ex.name);}
+    });
+  });
+  return res.sort();
+}
+
+// ── 기록 보기 (개선) ──────────────────────────────────────────────────────────
 function renderHistory(){
-  var dates=Object.keys(state.logs).sort(function(a,b){return b.localeCompare(a);});
-  var html='<div class="page-header"><div class="page-title">기록 보기</div><button class="settings-btn" data-action="go-settings">⚙</button></div>';
+  var now=new Date();
+  // 현재 표시할 달
+  if(!state.historyMonth){
+    state.historyMonth=now.getFullYear()+"-"+pad(now.getMonth()+1);
+  }
+  var ym=state.historyMonth;
+  var ymDate=new Date(ym+"-01");
+  var year=ymDate.getFullYear(),month=ymDate.getMonth();
+  var daysInMonth=new Date(year,month+1,0).getDate();
+  var firstDow=(new Date(year,month,1).getDay()+6)%7; // 월=0
+
+  // 이전/다음 달 버튼 비활성 조건
+  var allDates=Object.keys(state.logs).sort();
+  var minYm=allDates.length?allDates[0].substring(0,7):"";
+  var nowYm=now.getFullYear()+"-"+pad(now.getMonth()+1);
+  var canPrev=minYm&&ym>minYm;
+  var canNext=ym<nowYm;
+
+  // ── 히트맵 ──
+  var DAY_LABELS=["월","화","수","목","금","토","일"];
+  var heatHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px 16px 14px">';
+  // 월 네비게이션
+  heatHtml+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  heatHtml+='<button data-action="hist-prev-month" style="width:32px;height:32px;border:none;background:#f2f2f7;border-radius:10px;font-size:16px;cursor:pointer;color:'+(canPrev?"#111":"#ddd")+'" '+(canPrev?"":" disabled")+'>‹</button>';
+  heatHtml+='<span style="font-size:16px;font-weight:700;color:#111">'+year+'년 '+(month+1)+'월</span>';
+  heatHtml+='<button data-action="hist-next-month" style="width:32px;height:32px;border:none;background:#f2f2f7;border-radius:10px;font-size:16px;cursor:pointer;color:'+(canNext?"#111":"#ddd")+'" '+(canNext?"":" disabled")+'>›</button>';
+  heatHtml+='</div>';
+  // 요일 헤더
+  heatHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">';
+  DAY_LABELS.forEach(function(l,i){
+    heatHtml+='<div style="text-align:center;font-size:11px;font-weight:600;color:'+(i===5?"#5b8cf5":i===6?"#e05b5b":"#aaa")+'">'+l+'</div>';
+  });
+  heatHtml+='</div>';
+  // 날짜 셀 — aspect-ratio 대신 padding-bottom 트릭으로 정사각형 보장
+  heatHtml+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+  for(var i=0;i<firstDow;i++){heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%"></div>';}
+  for(var d=1;d<=daysInMonth;d++){
+    var dStr=year+"-"+pad(month+1)+"-"+pad(d);
+    var log=state.logs[dStr];
+    var isToday=dStr===todayStr();
+    var vol=log&&!log.rested?calcVolume(log.exercises):0;
+    var bg=log?(log.rested?"#f2f2f7":vol>2000?"#111":vol>800?"#555":"#999"):"#f9f9f9";
+    var fg=log?(log.rested?"#aaa":"#fff"):"#999";
+    var border=isToday?"2px solid #111":"2px solid transparent";
+    var extra=log&&!log.rested?'data-action="toggle-history" data-date="'+dStr+'"':'';
+    heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%">'+
+      '<div '+extra+' style="position:absolute;inset:0;border-radius:8px;background:'+bg+
+      ';border:'+border+';display:flex;align-items:center;justify-content:center;'+
+      'font-size:12px;font-weight:600;color:'+fg+
+      ';cursor:'+(log&&!log.rested?"pointer":"default")+'">'+d+'</div></div>';
+  }
+  heatHtml+='</div>';
+  // 범례
+  heatHtml+='<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">';
+  [["transparent","#111","미기록"],["#f2f2f7","#aaa","휴식"],["#999","#fff","운동(낮음)"],["#555","#fff","보통"],["#111","#fff","높음"]].forEach(function(c){
+    heatHtml+='<div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:3px;background:'+c[0]+';border:1px solid #e0e0e0"></div><span style="font-size:11px;color:#888">'+c[2]+'</span></div>';
+  });
+  heatHtml+='</div></div></div>';
+
+  // ── 볼륨 선 그래프 ──
+  // 해당 달 운동일 데이터 수집
+  var volPoints=[];
+  for(var dd=1;dd<=daysInMonth;dd++){
+    var ds=year+"-"+pad(month+1)+"-"+pad(dd);
+    var lg=state.logs[ds];
+    if(lg&&!lg.rested){
+      var v=state.historySelectedEx?calcExVolume(lg.exercises,state.historySelectedEx):calcVolume(lg.exercises);
+      if(v>0)volPoints.push({d:dd,v:v,ds:ds});
+    }
+  }
+
+  var exNames=allLogExNames();
+  var selEx=state.historySelectedEx;
+  // 운동 선택 드롭다운
+  var dropHtml='<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">';
+  dropHtml+='<span style="font-size:13px;font-weight:600;color:#aaa;white-space:nowrap">운동별</span>';
+  dropHtml+='<div style="overflow-x:auto;display:flex;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch">';
+  dropHtml+='<button data-action="hist-sel-ex" data-name="" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===null?"#111":"#f2f2f7")+';color:'+(selEx===null?"#fff":"#555")+'">전체</button>';
+  exNames.forEach(function(n){
+    dropHtml+='<button data-action="hist-sel-ex" data-name="'+n+'" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===n?"#111":"#f2f2f7")+';color:'+(selEx===n?"#fff":"#555")+'">'+n+'</button>';
+  });
+  dropHtml+='</div></div>';
+
+  var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
+  chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
+  chartHtml+=dropHtml;
+
+  if(volPoints.length<2){
+    chartHtml+='<div style="text-align:center;padding:32px 0;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
+  } else {
+    // SVG 선 그래프
+    var W=328,H=140,PL=44,PR=12,PT=12,PB=28;
+    var gW=W-PL-PR,gH=H-PT-PB;
+    var maxV=Math.max.apply(null,volPoints.map(function(p){return p.v;}));
+    var minV=Math.min.apply(null,volPoints.map(function(p){return p.v;}));
+    var vRange=maxV-minV||1;
+    function xp(i){return PL+i/(volPoints.length-1)*gW;}
+    function yp(v){return PT+gH-(v-minV)/vRange*gH;}
+
+    // 그라디언트 패스 (area fill)
+    var aPath="M"+xp(0)+","+yp(volPoints[0].v);
+    for(var i=1;i<volPoints.length;i++){
+      var x0=xp(i-1),y0=yp(volPoints[i-1].v),x1=xp(i),y1=yp(volPoints[i].v);
+      var cx=(x0+x1)/2;
+      aPath+=" C"+cx+","+y0+" "+cx+","+y1+" "+x1+","+y1;
+    }
+    var fillPath=aPath+" L"+xp(volPoints.length-1)+","+(PT+gH)+" L"+xp(0)+","+(PT+gH)+" Z";
+    var linePath=aPath;
+
+    // Y축 눈금 (3개)
+    var yTicks=[];
+    for(var t=0;t<3;t++){
+      var tv=minV+vRange*t/2;
+      yTicks.push({v:Math.round(tv),y:yp(tv)});
+    }
+
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible" xmlns="http://www.w3.org/2000/svg">';
+    // 그리드
+    yTicks.forEach(function(tk){
+      svg+='<line x1="'+PL+'" y1="'+tk.y+'" x2="'+(W-PR)+'" y2="'+tk.y+'" stroke="#f0f0f0" stroke-width="1"/>';
+      svg+='<text x="'+(PL-6)+'" y="'+(tk.y+4)+'" text-anchor="end" font-size="10" fill="#bbb">'+
+        (tk.v>=1000?Math.round(tk.v/100)/10+'k':tk.v)+'</text>';
+    });
+    // X축 레이블 (최대 6개)
+    var step=Math.ceil(volPoints.length/6);
+    volPoints.forEach(function(p,i){
+      if(i%step!==0&&i!==volPoints.length-1)return;
+      svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'일</text>';
+    });
+    // area fill
+    svg+='<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111" stop-opacity="0.10"/><stop offset="100%" stop-color="#111" stop-opacity="0.01"/></linearGradient></defs>';
+    svg+='<path d="'+fillPath+'" fill="url(#vg)"/>';
+    // line
+    svg+='<path d="'+linePath+'" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    // dots + tooltip-like value on hover — just dots
+    volPoints.forEach(function(p,i){
+      svg+='<circle cx="'+xp(i)+'" cy="'+yp(p.v)+'" r="3.5" fill="#111" stroke="#fff" stroke-width="1.5"/>';
+    });
+    svg+='</svg>';
+    chartHtml+=svg;
+
+    // 이번달 요약 스탯
+    var totalVol=volPoints.reduce(function(s,p){return s+p.v;},0);
+    var avgVol=Math.round(totalVol/volPoints.length);
+    var maxPt=volPoints.reduce(function(a,b){return a.v>b.v?a:b;});
+    chartHtml+='<div style="display:flex;gap:0;margin-top:14px;border-top:0.5px solid #f5f5f5;padding-top:14px">';
+    [[volPoints.length+"회","운동일"],[avgVol>=1000?(Math.round(avgVol/100)/10)+"k":avgVol,"평균 볼륨"],[maxPt.v>=1000?(Math.round(maxPt.v/100)/10)+"k":maxPt.v,"최고 볼륨"]].forEach(function(s){
+      chartHtml+='<div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#111">'+s[0]+'</div><div style="font-size:11px;color:#aaa;font-weight:500;margin-top:2px">'+s[1]+'</div></div>';
+    });
+    chartHtml+='</div>';
+  }
+  chartHtml+='</div></div>';
+
+  // ── 상세 로그 목록 ──
+  var dates=Object.keys(state.logs).filter(function(d){return d.startsWith(ym);}).sort(function(a,b){return b.localeCompare(a);});
+  var listHtml='<div style="padding:0 16px 6px"><span style="font-size:13px;font-weight:700;color:#aaa;letter-spacing:0.5px">상세 기록</span></div>';
   if(!dates.length){
-    html+='<div style="text-align:center;padding:60px 0;color:#bbb;font-size:15px;font-weight:500">아직 기록이 없습니다</div>';
+    listHtml+='<div style="text-align:center;padding:24px 0;color:#bbb;font-size:14px;font-weight:500">이 달에 기록이 없습니다</div>';
   } else {
     dates.forEach(function(d){
       var log=state.logs[d],open=state.historyOpen===d;
+      var vol=log.rested?0:calcVolume(log.exercises);
       var detail="";
       if(open){
         var rows=log.rested?'<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px">휴식</div>':
@@ -378,15 +566,18 @@ function renderHistory(){
         if(log.memo)rows+='<div style="padding:12px 0;font-size:14px;color:#888">'+log.memo+'</div>';
         detail='<div style="padding:0 16px 16px;border-top:0.5px solid #f5f5f5">'+rows+'</div>';
       }
-      html+='<div class="card" style="margin-bottom:10px">'+
-        '<div style="padding:16px;display:flex;align-items:center;cursor:pointer" data-action="toggle-history" data-date="'+d+'">'+
-        '<div style="flex:1"><div style="font-size:17px;font-weight:700;color:#111">'+d+'</div>'+
-        '<div style="font-size:13px;color:#aaa;margin-top:2px;font-weight:500">'+log.day+'</div></div>'+
-        (log.rested?'<span style="font-size:12px;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#888;font-weight:600;margin-right:8px">휴식</span>':"")+
-        '<span style="font-size:12px;color:#ccc;font-weight:600">'+(open?"▲":"▼")+'</span></div>'+detail+'</div>';
+      listHtml+='<div class="card" style="margin-bottom:8px">'+
+        '<div style="padding:14px 16px;display:flex;align-items:center;cursor:pointer;gap:10px" data-action="toggle-history" data-date="'+d+'">'+
+        '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:#111">'+d.substring(5).replace("-","/")+' <span style="font-weight:500;color:#888;font-size:14px">'+log.day+'</span></div>'+
+        (!log.rested&&vol?'<div style="font-size:12px;color:#aaa;margin-top:2px">볼륨 '+(vol>=1000?(Math.round(vol/100)/10)+'k':vol)+'</div>':"")+
+        '</div>'+
+        (log.rested?'<span style="font-size:12px;padding:3px 9px;border-radius:99px;background:#f2f2f7;color:#aaa;font-weight:600">휴식</span>':"")+
+        '<span style="font-size:11px;color:#ddd">'+(open?"▲":"▼")+'</span></div>'+detail+'</div>';
     });
   }
-  return html;
+
+  return '<div class="page-header"><div class="page-title">통계</div><button class="settings-btn" data-action="go-settings">⚙</button></div>'+
+    heatHtml+chartHtml+listHtml+'<div style="height:8px"></div>';
 }
 
 // ── 설정 ─────────────────────────────────────────────────────────────────────
@@ -470,6 +661,17 @@ function handleAction(el,e){
   if(a==="settings-back"){state.tab="today";render();window.scrollTo(0,0);return;}
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
+  if(a==="hist-prev-month"){
+    var d=new Date(state.historyMonth+"-01");d.setMonth(d.getMonth()-1);
+    state.historyMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);render();return;
+  }
+  if(a==="hist-next-month"){
+    var d=new Date(state.historyMonth+"-01");d.setMonth(d.getMonth()+1);
+    state.historyMonth=d.getFullYear()+"-"+pad(d.getMonth()+1);render();return;
+  }
+  if(a==="hist-sel-ex"){
+    state.historySelectedEx=el.dataset.name||null;render();return;
+  }
   if(a==="routine-set"){state.sheet={type:"setEdit",src:"routine",day:el.dataset.day,ei:parseInt(el.dataset.ei),si:0};render();return;}
   if(a==="routine-add-set"){
     var ex=state.routine[el.dataset.day].exercises[parseInt(el.dataset.ei)];
