@@ -13,9 +13,8 @@
 html{height:100%;overflow-x:hidden}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f2f2f7;min-height:100%;padding-top:var(--safe-top);padding-bottom:calc(80px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%}
-#tabbar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:0.5px solid #e8e8e8;padding-top:10px;padding-left:14px;padding-right:14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:100}
-#tabbar::after{content:"";position:absolute;bottom:calc(-1 * env(safe-area-inset-bottom));left:0;right:0;height:env(safe-area-inset-bottom);background:#fff;z-index:101}
-.tab-seg{background:#f2f2f7;border-radius:14px;display:flex;padding:4px;gap:3px;width:100%;max-width:390px;margin:0 auto}
+#tabbar{position:fixed;bottom:0;left:0;right:0;background:#f2f2f7;border-top:0.5px solid #e0e0e0;padding-top:10px;padding-left:14px;padding-right:14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:100}
+.tab-seg{display:flex;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;border-radius:10px;font-size:16px;font-weight:400;color:#888;background:none;transition:all 0.15s;font-family:inherit}
 .tab-btn.active{background:#fff;color:#111;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
 .page-header{padding:16px 16px 12px;display:flex;align-items:center;
@@ -754,7 +753,7 @@ function handleAction(el,e){
 function showToast(msg){
   var t=document.createElement("div");
   t.textContent=msg;
-  t.style.cssText="position:fixed;bottom:calc(90px + max(var(--safe-bot),6px) + 12px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s";
+  t.style.cssText="position:fixed;bottom:calc(90px + env(safe-area-inset-bottom) + 12px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s";
   document.body.appendChild(t);
   requestAnimationFrame(function(){t.style.opacity="1";});
   setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},200);},2000);
