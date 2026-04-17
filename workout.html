@@ -532,7 +532,7 @@ function renderHistory(){
   chartHtml+=dropHtml;
 
   if(volPoints.length<2){
-    chartHtml+='<div style="min-height:140px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
+    chartHtml+='<div style="height:205px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
   } else {
     var W=328,H=140,PL=44,PR=12,PT=12,PB=28;
     var gW=W-PL-PR,gH=H-PT-PB;
