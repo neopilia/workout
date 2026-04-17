@@ -11,25 +11,23 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-html{height:100%;}
+html{height:100%;overflow-x:hidden;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#f2f2f7;
   -webkit-text-size-adjust:100%;
-  /* flex column으로 탭바를 항상 화면 맨 아래에 고정 */
   display:flex;
   flex-direction:column;
-  min-height:100%;
-  min-height:-webkit-fill-available;
+  min-height:100vh;     /* 폴백 */
+  min-height:100dvh;    /* Safari 15.4+ — 주소창 포함한 실제 높이 */
   padding-top:var(--safe-top);
+  overflow-x:hidden;
 }
 #app{
-  flex:1; /* 남은 공간 모두 차지 */
+  flex:1;
   max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;
 }
-
 #tabbar{
-  /* fixed 제거 — flex 마지막 자식으로 항상 하단에 위치 */
   flex-shrink:0;
   width:100%;
   background:#fff;border-top:0.5px solid #e8e8e8;
@@ -820,7 +818,7 @@ function initEvents(){
 function showToast(msg){
   var t=document.createElement("div");
   t.textContent=msg;
-  t.style.cssText="position:fixed;bottom:calc(80px + max(env(safe-area-inset-bottom),6px) + 12px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s";
+  t.style.cssText="position:fixed;bottom:calc(env(safe-area-inset-bottom) + 80px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:14px;font-weight:600;padding:12px 20px;border-radius:99px;z-index:500;white-space:nowrap;opacity:0;transition:opacity 0.2s";
   document.body.appendChild(t);
   requestAnimationFrame(function(){t.style.opacity="1";});
   setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},200);},2000);
@@ -940,18 +938,6 @@ function initDragSort(){
   state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
   state.logSaved=!!state.logs[state.logDate.str];
   render();initEvents();initDragSort();
-
-  // 탭바 실제 높이를 측정해서 body padding-bottom에 적용
-  function fitBody(){
-    var tb=document.getElementById("tabbar");
-    if(tb)document.body.style.paddingBottom=tb.offsetHeight+"px";
-  }
-  fitBody();
-  window.addEventListener("resize",fitBody);
-  // iOS 주소창 변화 대응
-  if(window.visualViewport){
-    window.visualViewport.addEventListener("resize",fitBody);
-  }
 })();
 </script>
 </body>
