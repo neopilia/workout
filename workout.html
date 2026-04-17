@@ -532,7 +532,12 @@ function renderHistory(){
   chartHtml+=dropHtml;
 
   if(volPoints.length<2){
-    chartHtml+='<div style="height:205px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:14px;font-weight:500">'+(volPoints.length===1?"데이터가 1개입니다. 더 기록하면 그래프가 표시됩니다.":"이 달에 기록된 운동이 없습니다.")+'</div>';
+    chartHtml+='<div style="height:139px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:14px;font-weight:500;border:1.5px dashed #f0f0f0;border-radius:12px">'+(volPoints.length===1?"데이터가 1개입니다":"이 달에 기록 없음")+'</div>';
+    chartHtml+='<div style="display:flex;gap:0;margin-top:14px;border-top:0.5px solid #f5f5f5;padding-top:14px">';
+    [["—","운동일"],["—","평균 볼륨"],["—","최고 볼륨"]].forEach(function(s){
+      chartHtml+='<div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#ddd">'+s[0]+'</div><div style="font-size:11px;color:#aaa;font-weight:500;margin-top:2px">'+s[1]+'</div></div>';
+    });
+    chartHtml+='</div>';
   } else {
     var W=328,H=140,PL=44,PR=12,PT=12,PB=28;
     var gW=W-PL-PR,gH=H-PT-PB;
