@@ -15,8 +15,11 @@ html,body{margin:0;padding:0;width:100%;-webkit-text-size-adjust:100%;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#f2f2f7;
-  /* 상단 safe area — 시간 표시와 겹치지 않도록 */
+  /* 상단 safe area */
   padding-top:var(--safe-top);
+  /* 화면 전체를 채워서 탭바가 항상 하단에 붙도록 */
+  min-height:100vh;
+  min-height:-webkit-fill-available;
   /* 하단 여백은 JS가 탭바 실제 높이를 측정해서 주입 */
 }
 #app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;}
