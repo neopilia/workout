@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -32,12 +35,11 @@ body{
 #tabbar{
   position:fixed;
   bottom:0;left:0;right:0;
-  background:#fff;
-  border-top:0.5px solid #e8e8e8;
+  background:#f2f2f7;
+  border-top:0.5px solid #e0e0e0;
   padding:10px 14px;
   padding-bottom:calc(10px + env(safe-area-inset-bottom));
   z-index:100;
-  /* GPU 레이어로 올려서 리페인트와 분리 */
   transform:translateZ(0);
   -webkit-transform:translateZ(0);
   backface-visibility:hidden;
@@ -49,8 +51,7 @@ body{
   padding:4px;line-height:1;-webkit-appearance:none;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;}
 
-.tab-seg{background:#f2f2f7;border-radius:14px;display:flex;
-  padding:4px;gap:3px;max-width:390px;margin:0 auto}
+.tab-seg{display:flex;gap:3px;max-width:390px;margin:0 auto}
 .tab-btn{flex:1;border:none;cursor:pointer;padding:11px 4px;
   border-radius:10px;font-size:16px;font-weight:400;color:#888;
   background:none;transition:all 0.15s;font-family:inherit;-webkit-appearance:none}
@@ -402,26 +403,22 @@ function renderLog(){
     '<button class="btn-primary" data-action="log-save">저장</button>';
 }
 
+function calcSetVol(s){
+  if(s.incline!=null||s.speed!=null)return(s.min||0)*10;
+  if(s.min)return s.min*10;
+  if((s.w||0)===0)return(s.r||0);
+  return(s.w||0)*(s.r||0);
+}
 function calcVolume(exercises){
   var v=0;
-  (exercises||[]).forEach(function(ex){
-    ex.sets.forEach(function(s){
-      if(s.incline!=null||s.speed!=null){v+=(s.min||0)*10;}
-      else if(s.min){v+=s.min*10;}
-      else{v+=(s.w||0)*(s.r||0);}
-    });
-  });
+  (exercises||[]).forEach(function(ex){ex.sets.forEach(function(s){v+=calcSetVol(s);});});
   return v;
 }
 function calcExVolume(exercises,name){
   var v=0;
   (exercises||[]).forEach(function(ex){
     if(ex.name!==name)return;
-    ex.sets.forEach(function(s){
-      if(s.incline!=null||s.speed!=null){v+=(s.min||0)*10;}
-      else if(s.min){v+=s.min*10;}
-      else{v+=(s.w||0)*(s.r||0);}
-    });
+    ex.sets.forEach(function(s){v+=calcSetVol(s);});
   });
   return v;
 }
@@ -525,8 +522,10 @@ function renderHistory(){
     volPoints=volPoints.map(function(pt){
       return {d:pt.d,v:calcExVolume(state.logs[pt.ds].exercises,selEx),ds:pt.ds};
     });
+    volPoints=volPoints.filter(function(pt){
+      return (state.logs[pt.ds].exercises||[]).some(function(ex){return ex.name===selEx;});
+    });
   }
-  volPoints=volPoints.filter(function(pt){return pt.v>0;});
 
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
   chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
@@ -627,7 +626,6 @@ function renderSettings(){
   var logCount=Object.keys(state.logs).length;
   var exCount=Object.keys(state.routine).reduce(function(n,d){return n+state.routine[d].exercises.length;},0);
 
-  return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="18" x2="18" y2="18"/></svg></button></div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px 20px 16px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">데이터 백업</div>'+
     '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">루틴과 운동 기록 전체를 JSON 파일로 내보냅니다.</div>'+
