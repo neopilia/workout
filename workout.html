@@ -11,26 +11,30 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom)}
 
-html,body{margin:0;padding:0;width:100%;-webkit-text-size-adjust:100%;}
+html{height:100%;}
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   background:#f2f2f7;
-  /* 상단 safe area */
-  padding-top:var(--safe-top);
-  /* 화면 전체를 채워서 탭바가 항상 하단에 붙도록 */
-  min-height:100vh;
+  -webkit-text-size-adjust:100%;
+  /* flex column으로 탭바를 항상 화면 맨 아래에 고정 */
+  display:flex;
+  flex-direction:column;
+  min-height:100%;
   min-height:-webkit-fill-available;
-  /* 하단 여백은 JS가 탭바 실제 높이를 측정해서 주입 */
+  padding-top:var(--safe-top);
 }
-#app{max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;}
+#app{
+  flex:1; /* 남은 공간 모두 차지 */
+  max-width:390px;margin:0 auto;padding:0 0 16px;width:100%;
+}
 
 #tabbar{
-  position:fixed;bottom:0;left:0;right:0;
+  /* fixed 제거 — flex 마지막 자식으로 항상 하단에 위치 */
+  flex-shrink:0;
+  width:100%;
   background:#fff;border-top:0.5px solid #e8e8e8;
   padding:10px 14px;
   padding-bottom:calc(10px + env(safe-area-inset-bottom));
-  z-index:100;
-  transform:translateZ(0);-webkit-transform:translateZ(0);
 }
 .settings-btn{background:none;border:none;cursor:pointer;padding:6px;
   -webkit-appearance:none;flex-shrink:0;display:flex;align-items:center;
