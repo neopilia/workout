@@ -23,7 +23,7 @@ body{
   /* ✅ 상태바(시간 표시) 높이만큼 위 여백 추가 */
   padding-top:env(safe-area-inset-top);
   /* 탭바 높이만큼 아래 여백 — safe area 포함 */
-  padding-bottom:calc(68px + env(safe-area-inset-bottom));
+  padding-bottom:calc(90px + env(safe-area-inset-bottom));
 }
 #layout{ width:100%; }
 #app-scroll{ width:100%; }
@@ -403,7 +403,7 @@ function renderLog(){
     exHtml+
     '<div style="padding:0 16px 10px"><textarea data-action="log-memo" placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111">'+state.logMemo+'</textarea></div>'+
     '<button class="btn-primary" data-action="log-save">저장</button>'+
-    (state.logRested?'<div style="height:300px;background:#f2f2f7"></div>':'');
+    '<div style="height:300px;background:#f2f2f7"></div>';
 }
 
 function calcSetVol(s){
@@ -614,7 +614,7 @@ function renderHistory(){
   chartHtml+='</div></div>';
 
   return '<div class="page-header"><div class="page-title">통계</div><button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button></div>'+
-    heatHtml+chartHtml+'<div style="height:8px"></div>';
+    heatHtml+chartHtml+'<div style="height:24px"></div>';
 }
 
 function renderSettings(){
