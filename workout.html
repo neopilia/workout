@@ -402,7 +402,8 @@ function renderLog(){
     '<div class="toggle'+(state.logRested?" on":"")+'"><div class="toggle-knob"></div></div></div></div>'+
     exHtml+
     '<div style="padding:0 16px 10px"><textarea data-action="log-memo" placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111">'+state.logMemo+'</textarea></div>'+
-    '<button class="btn-primary" data-action="log-save">저장</button>';
+    '<button class="btn-primary" data-action="log-save">저장</button>'+
+    (state.logRested?'<div style="height:300px;background:#f2f2f7"></div>':'');
 }
 
 function calcSetVol(s){
