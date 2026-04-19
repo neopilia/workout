@@ -631,9 +631,16 @@ function renderSettings(){
     '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">백업 파일로 기존 데이터를 복원합니다.</div>'+
     '<button class="btn-secondary" data-action="restore" style="margin:0;width:100%">백업 파일 불러오기</button>'+
     '<input type="file" id="restore-file" accept=".json,application/json,text/plain" style="display:none">'+
-    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:20px 20px 16px">'+
-    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">루틴 내보내기</div>'+
-    '<button class="btn-secondary" data-action="export" style="margin:0;width:100%">텍스트 파일로 내보내기</button>'+
+    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:20px 20px 20px">'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">Claude AI 루틴 분석</div>'+
+    '<div style="font-size:14px;color:#888;margin-bottom:6px;line-height:1.5">① 분석 파일을 내보내 Claude에게 업로드하세요.</div>'+
+    '<div style="font-size:13px;color:#bbb;margin-bottom:14px;line-height:1.6;padding:10px 14px;background:#f9f9f9;border-radius:12px">'+
+    '💬 이렇게 말해보세요:<br><em style="color:#999">\"이 파일로 내 운동 패턴을 분석하고 개선된 루틴을 workout_routine.json 파일로 만들어줘\"</em></div>'+
+    '<button class="btn-primary" data-action="export-for-claude" style="margin:0 0 10px;width:100%">📤 분석 파일 내보내기</button>'+
+    '<div style="height:1px;background:#f0f0f0;margin:14px 0"></div>'+
+    '<div style="font-size:14px;color:#888;margin-bottom:14px;line-height:1.5">② Claude가 만들어준 루틴 파일을 불러와서 교체합니다.</div>'+
+    '<button class="btn-secondary" data-action="import-routine" style="margin:0;width:100%">📥 새 루틴 파일 불러오기</button>'+
+    '<input type="file" id="import-routine-file" accept=".json,application/json,text/plain" style="display:none">'+
     '</div></div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px">사용 현황</div>'+
@@ -642,8 +649,8 @@ function renderSettings(){
     '</div></div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px">앱 정보</div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">버전</span><span style="font-size:15px;font-weight:600;color:#111">v1.3</span></div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">최종 업데이트</span><span style="font-size:15px;font-weight:600;color:#111">2026. 04. 19</span></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">버전</span><span style="font-size:15px;font-weight:600;color:#111">v1.4</span></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">최종 업데이트</span><span style="font-size:15px;font-weight:600;color:#111">2026. 04. 20</span></div>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">제작자</span><span style="font-size:15px;font-weight:600;color:#111">neopilia</span></div>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">플랫폼</span><span style="font-size:15px;font-weight:600;color:#111">iOS Safari PWA</span></div>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0"><span style="font-size:15px;color:#555">저장소</span><a href="https://neopilia.github.io/workout/workout.html" style="font-size:13px;font-weight:500;color:#888;text-decoration:none">neopilia.github.io/workout</a></div>'+
@@ -886,6 +893,8 @@ function handleAction(el,e){
     state.sheet=null;render();return;
   }
   if(a==="close-sheet"){state.sheet=null;render();return;}
+  if(a==="export-for-claude"){exportForClaude();return;}
+  if(a==="import-routine"){importRoutine();return;}
   if(a==="export"){exportRoutine();return;}
   if(a==="backup"){backup();return;}
   if(a==="restore"){restore();return;}
@@ -916,6 +925,212 @@ function showToast(msg){
   document.body.appendChild(t);
   requestAnimationFrame(function(){t.style.opacity="1";});
   setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},200);},2000);
+}
+
+function exportForClaude(){
+  // ── 1. 운동별 통계 집계 (전체 기록 기반, raw 세트 제외) ──
+  var exMap={};  // name → {days, vols[], firstDate, lastDate, lastSets}
+  var logDates=Object.keys(state.logs).sort();
+  var totalWorkDays=0, totalRestDays=0;
+  var weekActivity={};  // 'Mon'~'Sun' → count
+
+  logDates.forEach(function(d){
+    var log=state.logs[d];
+    if(log.rested){totalRestDays++;return;}
+    totalWorkDays++;
+    // 요일 빈도
+    var dow=new Date(d).getDay(); // 0=Sun
+    var dowKey=["일","월","화","수","목","금","토"][dow];
+    weekActivity[dowKey]=(weekActivity[dowKey]||0)+1;
+    // 운동별
+    (log.exercises||[]).forEach(function(ex){
+      if(!exMap[ex.name])exMap[ex.name]={days:0,vols:[],firstDate:d,lastDate:d,lastSets:null,maxVol:0};
+      var vol=calcExVolume([ex],ex.name);
+      exMap[ex.name].days++;
+      exMap[ex.name].vols.push(vol);
+      exMap[ex.name].lastDate=d;
+      exMap[ex.name].lastSets=ex.sets;  // 가장 최근 세트만 보존
+      if(vol>exMap[ex.name].maxVol)exMap[ex.name].maxVol=vol;
+    });
+  });
+
+  // 운동별 요약 — 평균/최고/추세만
+  var exStats={};
+  Object.keys(exMap).forEach(function(name){
+    var e=exMap[name];
+    var avg=e.vols.length?Math.round(e.vols.reduce(function(s,v){return s+v;},0)/e.vols.length):0;
+    // 추세: 최근 5회 vs 이전 5회 평균 비교
+    var trend="stable";
+    if(e.vols.length>=6){
+      var half=Math.floor(e.vols.length/2);
+      var older=e.vols.slice(0,half).reduce(function(s,v){return s+v;},0)/half;
+      var newer=e.vols.slice(-half).reduce(function(s,v){return s+v;},0)/half;
+      trend=newer>older*1.05?"up":newer<older*0.95?"down":"stable";
+    }
+    exStats[name]={
+      totalDays:e.days,
+      avgVol:avg,
+      maxVol:e.maxVol,
+      trend:trend,
+      firstSeen:e.firstDate,
+      lastSeen:e.lastDate,
+      lastSets:e.lastSets  // 현재 무게/횟수 파악용 (최근 1회만)
+    };
+  });
+
+  // ── 2. 최근 4주 주간 요약 (날짜별 raw 제거, 주 단위 집계) ──
+  var weekSummaries=[];
+  for(var w=3;w>=0;w--){
+    var wStart=new Date();wStart.setDate(wStart.getDate()-wStart.getDay()+1-w*7);
+    var wEnd=new Date(wStart);wEnd.setDate(wStart.getDate()+6);
+    var wWorkDays=0,wRestDays=0,wTotalVol=0,wExNames=[];
+    for(var dd=new Date(wStart);dd<=wEnd;dd.setDate(dd.getDate()+1)){
+      var ds=dd.getFullYear()+"-"+pad(dd.getMonth()+1)+"-"+pad(dd.getDate());
+      var lg=state.logs[ds];
+      if(!lg)continue;
+      if(lg.rested){wRestDays++;continue;}
+      wWorkDays++;
+      wTotalVol+=calcVolume(lg.exercises);
+      (lg.exercises||[]).forEach(function(ex){
+        if(wExNames.indexOf(ex.name)<0)wExNames.push(ex.name);
+      });
+    }
+    weekSummaries.push({
+      weekOf:wStart.getFullYear()+"-"+pad(wStart.getMonth()+1)+"-"+pad(wStart.getDate()),
+      workDays:wWorkDays,
+      restDays:wRestDays,
+      totalVolume:wTotalVol,
+      exercises:wExNames
+    });
+  }
+
+  // ── 3. 현재 루틴 요약 (세트 수 + 대표 무게만) ──
+  var routineSummary={};
+  Object.keys(state.routine).forEach(function(day){
+    var info=state.routine[day];
+    routineSummary[day]={
+      name:info.name,
+      exercises:(info.exercises||[]).map(function(ex){
+        var repSet=ex.sets[0]||{};
+        var repr=repSet.incline!=null?(repSet.incline+"%/"+repSet.speed+"km/"+repSet.min+"분"):
+                 repSet.min?repSet.min+"분":
+                 repSet.w===0?repSet.r+"회×"+ex.sets.length+"세트":
+                 repSet.w+"kg×"+repSet.r+"회×"+ex.sets.length+"세트";
+        return {name:ex.name, summary:repr, setCount:ex.sets.length};
+      })
+    };
+  });
+
+  // ── 4. 페이로드 조립 ──
+  var payload={
+    meta:{
+      app:"myWorkout",
+      exportDate:todayStr(),
+      totalLogDays:logDates.length,
+      workDays:totalWorkDays,
+      restDays:totalRestDays,
+      weekdayActivity:weekActivity
+    },
+    currentRoutine:routineSummary,
+    exerciseStats:exStats,
+    recentWeeks:weekSummaries,
+    // ── Claude에게 보내는 지시 ──
+    PROMPT_FOR_CLAUDE:[
+      "## 역할",
+      "당신은 개인 헬스 트레이너입니다. 아래 운동 데이터를 분석해 루틴을 개선해 주세요.",
+      "",
+      "## 분석 요청",
+      "1. 운동 패턴 평가: 빈도, 볼륨 추세, 근육군 균형",
+      "2. 문제점 또는 개선 포인트 3가지",
+      "3. 개선된 루틴 제안 (아래 형식 필수)",
+      "",
+      "## 루틴 파일 출력 규칙 (반드시 준수)",
+      "- 파일명: workout_routine.json",
+      "- 7개 요일 키 필수: 월요일 화요일 수요일 목요일 금요일 토요일 일요일",
+      "- 각 요일: { name: string, exercises: Exercise[] }",
+      "- Exercise: { name: string, sets: Set[] }",
+      "- Set 형식 3종:",
+      "  - 중량운동: { w: 숫자(kg), r: 숫자(회) }",
+      "  - 맨몸/횟수만: { w: 0, r: 숫자 }",
+      "  - 런닝머신: { incline: 숫자, speed: 숫자, min: 숫자 }",
+      "- 휴식일: exercises: []",
+      "- JSON 외 다른 텍스트 없이 파일만 생성",
+      "",
+      "## 출력 예시 (workout_routine.json)",
+      JSON.stringify({
+        "월요일":{name:"휴식",exercises:[]},
+        "화요일":{name:"가슴+삼두",exercises:[
+          {name:"Chest Press",sets:[{w:20,r:10},{w:20,r:10},{w:22.5,r:8}]},
+          {name:"런닝머신",sets:[{incline:1,speed:6.5,min:20}]}
+        ]},
+        "수요일":{name:"하체",exercises:[
+          {name:"Squat",sets:[{w:20,r:12},{w:25,r:10},{w:25,r:10}]}
+        ]},
+        "목요일":{name:"등+이두",exercises:[]},
+        "금요일":{name:"휴식",exercises:[]},
+        "토요일":{name:"전체",exercises:[]},
+        "일요일":{name:"휴식",exercises:[]}
+      },null,2)
+    ].join("\n")
+  };
+
+  var json=JSON.stringify(payload,null,2);
+  var filename="workout_analysis_"+todayStr()+".json";
+  var blob=new Blob([json],{type:"application/json"});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],filename,{type:"application/json"})]})){
+    var file=new File([blob],filename,{type:"application/json"});
+    navigator.share({title:"운동 분석 데이터",files:[file]}).catch(function(){});
+    return;
+  }
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast("분석 파일을 내보냈습니다 📤");
+}
+
+function importRoutine(){
+  var inp=document.getElementById("import-routine-file");
+  if(!inp)return;
+  inp.onchange=function(e){
+    var file=e.target.files[0];if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var data=JSON.parse(ev.target.result);
+        // workout_routine.json 직접 형식 or backup 형식 모두 지원
+        var newRoutine=null;
+        if(data["월요일"]||data["화요일"]||data["수요일"]){
+          // 직접 루틴 형식
+          newRoutine=data;
+        } else if(data.routine&&data.routine["월요일"]){
+          // backup 형식
+          newRoutine=data.routine;
+        }
+        if(!newRoutine){alert("올바른 루틴 파일이 아닙니다.\n\n7개 요일 키(월요일~일요일)를 가진 JSON 파일을 불러주세요.");return;}
+        // 필수 요일 체크
+        var required=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
+        var missing=required.filter(function(d){return !newRoutine[d];});
+        if(missing.length>0){alert("다음 요일 데이터가 없습니다: "+missing.join(", ")+"\n\nClaude에게 모든 요일을 포함해달라고 요청하세요.");return;}
+        // 미리보기
+        var preview=required.map(function(d){
+          var info=newRoutine[d];
+          var exNames=(info.exercises||[]).map(function(e){return e.name;}).join(", ")||"휴식";
+          return d+": "+info.name+" ("+exNames+")";
+        }).join("\n");
+        if(!confirm("새 루틴으로 교체할까요?\n\n"+preview+"\n\n⚠️ 기존 루틴은 덮어쓰기됩니다. 운동 기록은 유지됩니다."))return;
+        state.routine=migrateTreadmill(newRoutine);
+        saveR(state.routine);
+        var ls=initLogState(state.logDate.str,state.logDate.kr);
+        state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
+        state.logSaved=!!state.logs[state.logDate.str];
+        render();
+        showToast("새 루틴이 적용되었습니다 ✅");
+      }catch(err){alert("파일을 읽는 중 오류가 발생했습니다.\n\n유효한 JSON 파일인지 확인해 주세요.");}
+    };
+    reader.readAsText(file);
+  };
+  inp.value="";inp.click();
 }
 
 function exportRoutine(){
