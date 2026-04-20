@@ -482,9 +482,9 @@ function renderHistory(){
     var dStr=year+"-"+pad(month+1)+"-"+pad(d);
     var log=state.logs[dStr];
     var isToday=dStr===todayStr();
-    var vol=log&&!log.rested?calcVolume(log.exercises):0;
-    var bg=log?(log.rested?"#f2f2f7":vol>2000?"#111":vol>800?"#555":"#999"):"#f9f9f9";
-    var fg=log?(log.rested?"#aaa":"#fff"):"#999";
+    // 3가지 상태: 운동 / 휴식 / 미입력
+    var bg=log?(log.rested?"#d1d1d6":"#1c1c1e"):"#ffffff";
+    var fg=log?(log.rested?"#6e6e73":"#ffffff"):"#aeaeb2";
     var border=isToday?"2px solid #111":"2px solid transparent";
     var extra=log?'data-action="open-history-sheet" data-date="'+dStr+'"':'';
     heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%">'+
@@ -495,8 +495,8 @@ function renderHistory(){
   }
   heatHtml+='</div>';
   heatHtml+='<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">';
-  [["transparent","#111","미기록"],["#f2f2f7","#aaa","휴식"],["#999","#fff","운동(낮음)"],["#555","#fff","보통"],["#111","#fff","높음"]].forEach(function(c){
-    heatHtml+='<div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:3px;background:'+c[0]+';border:1px solid #e0e0e0"></div><span style="font-size:11px;color:#888">'+c[2]+'</span></div>';
+  [["#1c1c1e","#fff","운동"],["#d1d1d6","#6e6e73","휴식"],["#ffffff","#aeaeb2","미입력"]].forEach(function(c){
+    heatHtml+='<div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;border-radius:4px;background:'+c[0]+';border:'+( c[0]==="#ffffff"?"1.5px solid #d1d1d6":"none")+';"></div><span style="font-size:12px;font-weight:600;color:#555">'+c[2]+'</span></div>';
   });
   heatHtml+='</div></div></div>';
 
