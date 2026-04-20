@@ -928,38 +928,53 @@ function showToast(msg){
 }
 
 function exportForClaude(){
-  // ── 1. 운동별 통계 집계 (전체 기록 기반, raw 세트 제외) ──
-  var exMap={};  // name → {days, vols[], firstDate, lastDate, lastSets}
+  // ── 1. 운동별 통계 집계 ──
+  // challengeSet = 각 운동의 마지막 세트 (도전 세트)
+  var exMap={};
   var logDates=Object.keys(state.logs).sort();
   var totalWorkDays=0, totalRestDays=0;
-  var weekActivity={};  // 'Mon'~'Sun' → count
+  var weekActivity={};
 
   logDates.forEach(function(d){
     var log=state.logs[d];
     if(log.rested){totalRestDays++;return;}
     totalWorkDays++;
-    // 요일 빈도
-    var dow=new Date(d).getDay(); // 0=Sun
+    var dow=new Date(d).getDay();
     var dowKey=["일","월","화","수","목","금","토"][dow];
     weekActivity[dowKey]=(weekActivity[dowKey]||0)+1;
-    // 운동별
     (log.exercises||[]).forEach(function(ex){
-      if(!exMap[ex.name])exMap[ex.name]={days:0,vols:[],firstDate:d,lastDate:d,lastSets:null,maxVol:0};
+      if(!exMap[ex.name])exMap[ex.name]={
+        days:0, vols:[], firstDate:d, lastDate:d,
+        maxVol:0, recentHistory:[]  // 최근 기록 누적용
+      };
       var vol=calcExVolume([ex],ex.name);
       exMap[ex.name].days++;
+      // vols는 최근 20회만 보존 — 파일 크기 일정하게 유지
+      if(exMap[ex.name].vols.length>=20)exMap[ex.name].vols.shift();
       exMap[ex.name].vols.push(vol);
       exMap[ex.name].lastDate=d;
-      exMap[ex.name].lastSets=ex.sets;  // 가장 최근 세트만 보존
       if(vol>exMap[ex.name].maxVol)exMap[ex.name].maxVol=vol;
+      // 도전 세트 판단: 런닝머신 제외, 마지막 세트가 앞 세트보다 중량 높으면 도전 세트
+      var sets=ex.sets;
+      if(sets&&sets.length>0&&sets[0].incline==null&&sets[0].min==null){
+        var lastSet=sets[sets.length-1];
+        var mainSets=sets.slice(0,-1);
+        var mainW=mainSets.length>0?mainSets[0].w:null;
+        var isChallengeSet=sets.length>1&&mainW!=null&&lastSet.w>mainW;
+        exMap[ex.name].recentHistory.push({
+          date:d,
+          allSets:sets,  // 날짜별 전체 세트 (최근 5회만 보존)
+          challengeSet:isChallengeSet?lastSet:null
+        });
+      }
     });
   });
 
-  // 운동별 요약 — 평균/최고/추세만
+  // 운동별 요약 — 증량 판단에 필요한 정보 포함
   var exStats={};
   Object.keys(exMap).forEach(function(name){
     var e=exMap[name];
     var avg=e.vols.length?Math.round(e.vols.reduce(function(s,v){return s+v;},0)/e.vols.length):0;
-    // 추세: 최근 5회 vs 이전 5회 평균 비교
     var trend="stable";
     if(e.vols.length>=6){
       var half=Math.floor(e.vols.length/2);
@@ -967,6 +982,18 @@ function exportForClaude(){
       var newer=e.vols.slice(-half).reduce(function(s,v){return s+v;},0)/half;
       trend=newer>older*1.05?"up":newer<older*0.95?"down":"stable";
     }
+    // 최근 5회 기록만 추출
+    var recent=e.recentHistory.slice(-5);
+    // 도전 세트 연속 성공 횟수 (최근부터 역산)
+    var consecutiveChallengeSuccess=0;
+    for(var i=recent.length-1;i>=0;i--){
+      if(recent[i].challengeSet){consecutiveChallengeSuccess++;}
+      else{break;}
+    }
+    // 현재 주력 중량/횟수 (가장 최근 기록의 첫 번째 세트 기준)
+    var lastRecord=recent.length>0?recent[recent.length-1]:null;
+    var currentMainSet=lastRecord&&lastRecord.allSets.length>0?lastRecord.allSets[0]:null;
+    var currentChallengeSet=lastRecord?lastRecord.challengeSet:null;
     exStats[name]={
       totalDays:e.days,
       avgVol:avg,
@@ -974,7 +1001,13 @@ function exportForClaude(){
       trend:trend,
       firstSeen:e.firstDate,
       lastSeen:e.lastDate,
-      lastSets:e.lastSets  // 현재 무게/횟수 파악용 (최근 1회만)
+      // 증량 판단용
+      currentMainSet:currentMainSet,      // 현재 주력 세트 (첫 세트 기준)
+      currentChallengeSet:currentChallengeSet,  // 현재 도전 세트
+      consecutiveChallengeSuccess:consecutiveChallengeSuccess,  // 도전 세트 연속 성공 횟수
+      recentSets:recent.map(function(r){  // 최근 5회 전체 세트 기록
+        return {date:r.date, sets:r.allSets};
+      })
     };
   });
 
@@ -1038,9 +1071,12 @@ function exportForClaude(){
     PROMPT_FOR_CLAUDE:[
       "# myWorkout 운동 데이터 분석 요청",
       "",
+      "**[필수] 모든 응답은 반드시 한국어로 작성하세요. 영어 사용 금지.**",
+      "",
       "이 파일은 'myWorkout' iOS 앱에서 내보낸 운동 데이터입니다.",
-      "파일을 열자마자 아래 순서대로 즉시 분석을 시작하세요.",
-      "별도 안내나 확인 질문 없이, '## 운동 패턴 분석'부터 바로 출력하세요.",
+      "사용자가 새 채팅에서 이 파일만 업로드한 상태입니다. 추가 설명 없이 파일 내용만으로 분석하세요.",
+      "파일을 받는 즉시 아래 순서대로 분석을 시작하세요.",
+      "인사말·확인 질문·파일 설명 없이 '## 운동 패턴 분석'부터 바로 출력하세요.",
       "",
       "## 데이터 구조 설명",
       "- currentRoutine: 현재 설정된 요일별 루틴 (name=테마, exercises=운동 목록, summary=대표 세트 요약)",
@@ -1048,7 +1084,10 @@ function exportForClaude(){
       "  - totalDays: 해당 운동을 한 총 일수",
       "  - avgVol / maxVol: 평균/최고 볼륨 (중량×횟수 합산)",
       "  - trend: 볼륨 추세 (up=증가중 / stable=유지 / down=감소중)",
-      "  - lastSets: 가장 최근에 수행한 세트 배열 (실제 사용 중량/횟수)",
+      "  - currentMainSet: 현재 주력 세트 {w,r} — 루틴 첫 세트 기준 실제 수행 중량",
+      "  - currentChallengeSet: 현재 도전 세트 {w,r} — 마지막 세트에 올린 중량 (없으면 null)",
+      "  - consecutiveChallengeSuccess: 도전 세트를 연속으로 성공한 횟수",
+      "  - recentSets: 최근 5회 실제 수행 세트 기록 [{date, sets:[]}]",
       "- recentWeeks: 최근 4주 주간 요약 (운동일수, 총볼륨, 수행 종목)",
       "- meta: 전체 기록 통계 (총 운동일수, 요일별 활동 빈도)",
       "",
@@ -1086,10 +1125,25 @@ function exportForClaude(){
       "- JSON 파일 내용만 출력 (설명 텍스트 없이)",
       "",
       "## 중량 단위 규칙 (반드시 준수)",
-      "- 이 헬스장의 덤벨/바벨 증량 단위는 2.5kg입니다 (예: 5 → 7.5 → 10 → 12.5kg)",
-      "- 머신 중량 단위는 5kg입니다 (예: 20 → 25 → 30kg)",
-      "- lastSets의 현재 중량을 기준으로 점진적 과부하를 적용할 때 위 단위를 엄수하세요",
-      "- 절대로 21kg, 23kg, 11kg 같은 단위에 맞지 않는 중량을 제안하지 마세요",
+      "- 머신 증량 단위는 5kg (예: 20 → 25 → 30kg)",
+      "- 덤벨/바벨 증량 단위는 2.5kg (예: 5 → 7.5 → 10kg)",
+      "- lastSets의 현재 중량을 기준으로 위 단위만 사용하세요",
+      "- 21kg, 23kg처럼 단위에 맞지 않는 중량은 절대 제안하지 마세요",
+      "",
+      "## 세트 구성 철학 (반드시 반영)",
+      "- 사용자의 점진적 과부하 방식: 주력 세트를 반복하다가 마지막에 '도전 세트' 1개 추가",
+      "- 도전 세트 = 주력 중량보다 한 단계 높은 중량의 마지막 세트, 횟수는 1~2회 줄여도 됨",
+      "- 예시: 주력 20kg×10회×3세트 → 마지막 25kg×8회 도전 세트",
+      "- 도전 세트가 편해질 때 전체 중량을 한 단계 올리는 방식",
+      "",
+      "## 증량 판단 기준 (exerciseStats 데이터 기반)",
+      "- consecutiveChallengeSuccess >= 3 : 증량 적극 권장 → 주력+도전 세트 모두 한 단계 올리기",
+      "- consecutiveChallengeSuccess = 2   : 증량 고려 → 도전 세트만 한 단계 올리기",
+      "- consecutiveChallengeSuccess = 1   : 현재 도전 세트 유지",
+      "- consecutiveChallengeSuccess = 0   : 도전 세트 없음 → 마지막 세트에 도전 세트 추가 제안",
+      "- currentChallengeSet이 null이면 아직 도전 세트 없이 수행 중 → 도전 세트 도입 제안",
+      "- recentSets를 보고 실제 수행한 중량/횟수가 루틴 대비 낮으면 루틴 중량도 하향 조정",
+      "- 루틴 제안 시 반드시 위 기준을 근거로 각 운동의 증량 여부를 판단하고 비교표에 명시",
       "",
       "## 출력 예시 (workout_routine.json 형식)",
       JSON.stringify({
