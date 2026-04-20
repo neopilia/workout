@@ -335,8 +335,7 @@ function renderRoutine(){
         info.exercises.forEach(function(ex,i){
           var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
             ex.sets.map(function(s,si){return '<button class="set-chip" data-action="routine-set" data-day="'+day+'" data-ei="'+i+'" data-si="'+si+'">'+fmtSet(s)+'</button>';}).join("");
-          rows+='<div data-routine-drag-day="'+day+'" data-routine-drag-idx="'+i+'" style="display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:0.5px solid #f5f5f5">'+
-            '<div class="drag-handle" data-routine-drag-handle="1">⠿</div>'+
+          rows+='<div style="display:flex;align-items:center;gap:8px;padding:12px 0;border-bottom:0.5px solid #f5f5f5">'+
             '<div style="flex:1"><div style="font-size:16px;font-weight:600;color:#111;margin-bottom:6px">'+ex.name+'</div>'+
             '<div style="display:flex;flex-wrap:wrap;gap:3px">'+chips+
             '<button class="set-chip" data-action="routine-add-set" data-day="'+day+'" data-ei="'+i+'" style="color:#111;font-weight:700">+ 세트</button></div></div>'+
@@ -1289,18 +1288,18 @@ function restore(){
 
 var drag=null;
 function getDragEls(type,day){
-  return [].slice.call(type==="log"?document.querySelectorAll("[data-drag-idx]"):document.querySelectorAll('[data-routine-drag-day="'+day+'"]'));
+  return [].slice.call(document.querySelectorAll("[data-drag-idx]"));
 }
-function getDragIdx(el,type){return parseInt(type==="log"?el.dataset.dragIdx:el.dataset.routineDragIdx);}
+function getDragIdx(el,type){return parseInt(el.dataset.dragIdx);}
 function initDragSort(){
   var app=document.getElementById("app");
   app.addEventListener("touchstart",function(e){
-    var lh=e.target.closest("[data-drag-handle]"),rh=e.target.closest("[data-routine-drag-handle]");
-    if(!lh&&!rh)return;
-    var isLog=!!lh,anchor=isLog?lh.closest("[data-drag-idx]"):rh.closest("[data-routine-drag-idx]");
+    var lh=e.target.closest("[data-drag-handle]");
+    if(!lh)return;
+    var isLog=true,anchor=lh.closest("[data-drag-idx]");
     if(!anchor)return;
-    var idx=parseInt(isLog?anchor.dataset.dragIdx:anchor.dataset.routineDragIdx);
-    var day=isLog?null:anchor.dataset.routineDragDay;
+    var idx=parseInt(anchor.dataset.dragIdx);
+    var day=null;
     var rect=anchor.getBoundingClientRect();
     var ghost=anchor.cloneNode(true);
     ghost.style.cssText="position:fixed;left:"+rect.left+"px;top:"+rect.top+"px;width:"+rect.width+"px;z-index:300;pointer-events:none;border-radius:18px;background:#fff;box-shadow:0 12px 32px rgba(0,0,0,0.18);opacity:0.96;transform:scale(1.02)";
@@ -1333,13 +1332,8 @@ function initDragSort(){
     drag.ghost.remove();
     getDragEls(drag.type,drag.day).forEach(function(el){el.style.opacity="";el.style.outline="";});
     if(drag.target!==drag.idx){
-      if(drag.type==="log"){
-        var arr=state.logSets.slice(),item=arr.splice(drag.idx,1)[0];arr.splice(drag.target,0,item);
-        state.logSets=arr;state.logSaved=false;
-      } else {
-        var exs=state.routine[drag.day].exercises.slice(),ex=exs.splice(drag.idx,1)[0];exs.splice(drag.target,0,ex);
-        state.routine[drag.day].exercises=exs;saveR(state.routine);
-      }
+      var arr=state.logSets.slice(),item=arr.splice(drag.idx,1)[0];arr.splice(drag.target,0,item);
+      state.logSets=arr;state.logSaved=false;
     }
     drag=null;render();
   }
