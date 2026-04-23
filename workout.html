@@ -23,7 +23,7 @@ body{
   /* ✅ 상태바(시간 표시) 높이만큼 위 여백 추가 */
   padding-top:env(safe-area-inset-top);
   /* 탭바 높이만큼 아래 여백 — safe area 포함 */
-  padding-bottom:calc(90px + env(safe-area-inset-bottom));
+  padding-bottom:calc(120px + env(safe-area-inset-bottom));
 }
 #layout{ width:100%; }
 #app-scroll{ width:100%; }
@@ -332,7 +332,7 @@ function renderToday(){
     '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
     '</div><div class="card" style="margin-bottom:16px">'+rows+'</div>'+
     '<button class="btn-primary" data-action="go-log">오늘 운동 기록하기</button>'+
-    '<div style="height:24px"></div>';
+    '<div style="height:120px"></div>';
 }
 
 function renderRoutine(){
@@ -369,7 +369,7 @@ function renderRoutine(){
       '<div style="font-size:13px;color:#aaa;font-weight:500">'+info.name+'</div></div>'+
       '<span style="font-size:12px;color:#ccc;font-weight:600">'+(isOpen?"▲":"▼")+'</span></div>'+body+'</div>';
   });
-  html+='<div style="height:24px"></div>';
+  html+='<div style="height:120px"></div>';
   return html;
 }
 
