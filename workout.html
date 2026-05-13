@@ -240,7 +240,7 @@ function fmtSet(s){
 }
 function dc(o){return JSON.parse(JSON.stringify(o));}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function findMissedDays(){
+function getWeekRoutineDays(){
   var res=[];
   var today=new Date();
   today.setHours(0,0,0,0);
@@ -251,8 +251,7 @@ function findMissedDays(){
     var dStr=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
     var kr=DAYS[d.getDay()===0?6:d.getDay()-1];
     var info=state.routine[kr];
-    var log=state.logs[dStr];
-    if(info&&info.exercises.length>0&&(!log||log.rested))res.push({str:dStr,kr:kr});
+    if(info&&info.exercises.length>0)res.push({str:dStr,kr:kr});
   }
   return res;
 }
@@ -394,13 +393,13 @@ function renderLog(){
   var ld=state.logDate,rInfo=state.routine[ld.kr];
   var exHtml="";
   if(!state.logRested){
-    var missedDays=findMissedDays();
+    var missedDays=getWeekRoutineDays();
     if(missedDays.length>0&&!state.missedDismissed){
       var btns=missedDays.map(function(m){
         var sel=state.missedSelected===m.kr;
         return '<button data-action="fetch-missed" data-kr="'+m.kr+'" style="padding:8px 14px;border-radius:99px;border:1.5px solid '+(sel?'#111':'#ddd')+';background:'+(sel?'#111':'#fff')+';color:'+(sel?'#fff':'#888')+';font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">'+m.kr.replace('요일','')+(sel?' ✓':'')+'</button>';
       }).join('');
-      exHtml='<div class="card" style="margin-bottom:10px"><div style="padding:14px 16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;color:#aaa;font-weight:500">기록되지 않은 운동이 있어요</span><button data-action="dismiss-missed" style="width:28px;height:28px;border-radius:99px;border:none;background:#f2f2f7;color:#aaa;font-size:14px;cursor:pointer;font-family:inherit">✕</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+btns+'</div></div></div>';
+      exHtml='<div class="card" style="margin-bottom:10px"><div style="padding:14px 16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;color:#aaa;font-weight:500">이번 주 루틴 가져오기</span><button data-action="dismiss-missed" style="width:28px;height:28px;border-radius:99px;border:none;background:#f2f2f7;color:#aaa;font-size:14px;cursor:pointer;font-family:inherit">✕</button></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+btns+'</div></div></div>';
     }
     if(state.logSets.length===0){
       exHtml+='<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">운동을 추가해 주세요</div>';
