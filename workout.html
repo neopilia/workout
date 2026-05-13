@@ -243,15 +243,16 @@ function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function findMissedDays(){
   var res=[];
   var today=new Date();
+  today.setHours(0,0,0,0);
   var dow=today.getDay();
   var monday=new Date(today);
   monday.setDate(today.getDate()-(dow===0?6:dow-1));
-  monday.setHours(0,0,0,0);
   for(var d=new Date(monday);d<today;d.setDate(d.getDate()+1)){
     var dStr=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
     var kr=DAYS[d.getDay()===0?6:d.getDay()-1];
     var info=state.routine[kr];
-    if(info&&info.exercises.length>0&&!state.logs[dStr])res.push({str:dStr,kr:kr});
+    var log=state.logs[dStr];
+    if(info&&info.exercises.length>0&&(!log||log.rested))res.push({str:dStr,kr:kr});
   }
   return res;
 }
