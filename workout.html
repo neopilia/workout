@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="myWorkout"/>
@@ -399,10 +399,10 @@ function renderLog(){
       var rNames={};
       (rInfo?rInfo.exercises:[]).forEach(function(e){rNames[e.name]=true;});
       state.logSets.forEach(function(ex,i){
-        var inR=!!rNames[ex.name],synced=!!(state.logRoutineSync&&state.logRoutineSync[ex.name]);
+        var synced=!!(state.logRoutineSync&&state.logRoutineSync[ex.name]);
         var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
           ex.sets.map(function(s,si){return '<button class="set-chip" data-action="log-set" data-ei="'+i+'" data-si="'+si+'">'+fmtSet(s)+'</button>';}).join("");
-        var syncBtn=inR?'<button data-action="log-sync" data-name="'+ex.name+'" style="font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1.5px solid '+(synced?"#111":"#ddd")+';background:'+(synced?"#111":"transparent")+';color:'+(synced?"#fff":"#aaa")+';cursor:pointer;font-family:inherit">루틴 반영'+(synced?" ✓":"")+'</button>':"";
+        var syncBtn='<button data-action="log-sync" data-name="'+ex.name+'" style="font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1.5px solid '+(synced?"#111":"#ddd")+';background:'+(synced?"#111":"transparent")+';color:'+(synced?"#fff":"#aaa")+';cursor:pointer;font-family:inherit">루틴 반영'+(synced?" ✓":"")+'</button>';
         exHtml+='<div class="ex-card" data-drag-idx="'+i+'">'+
           '<div class="ex-card-header"><div class="drag-handle" data-drag-handle="1">⠿</div>'+
           '<span class="ex-card-name">'+ex.name+'</span>'+
@@ -899,6 +899,8 @@ function handleAction(el,e){
     saveL(state.logs);
     if(state.logRoutineSync&&state.routine[ld.kr]&&!state.logRested){
       var changed=false;
+      var routineNames={};
+      state.routine[ld.kr].exercises.forEach(function(re){routineNames[re.name]=true;});
       state.routine[ld.kr].exercises=state.routine[ld.kr].exercises.map(function(re){
         if(state.logRoutineSync[re.name]){
           var lg=null;
@@ -911,6 +913,12 @@ function handleAction(el,e){
           }
         }
         return re;
+      });
+      state.logSets.forEach(function(ls2){
+        if(state.logRoutineSync[ls2.name]&&!routineNames[ls2.name]){
+          changed=true;
+          state.routine[ld.kr].exercises.push({name:ls2.name,sets:dc(ls2.sets)});
+        }
       });
       if(changed)saveR(state.routine);
     }
