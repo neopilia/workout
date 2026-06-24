@@ -263,7 +263,17 @@ function allExNames(){
       if(!seen[ex.name]){seen[ex.name]=true;res.push(ex.name);}
     });
   });
-  return res;
+  Object.keys(state.logs).forEach(function(date){
+    var lg=state.logs[date];
+    if(!lg||lg.rested)return;
+    (lg.exercises||[]).forEach(function(ex){
+      if(!seen[ex.name]){seen[ex.name]=true;res.push(ex.name);}
+    });
+  });
+  state.logSets.forEach(function(ex){
+    if(!seen[ex.name]){seen[ex.name]=true;res.push(ex.name);}
+  });
+  return res.sort();
 }
 function exRefSets(name){
   var found=null;
