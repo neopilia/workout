@@ -517,25 +517,29 @@ function renderHistory(){
   heatHtml+='</div></div></div>';
 
   var volPoints=[];
-  for(var dd=1;dd<=daysInMonth;dd++){
-    var ds=year+"-"+pad(month+1)+"-"+pad(dd);
+  var cutoff=new Date(now);
+  cutoff.setMonth(cutoff.getMonth()-3);
+  cutoff.setHours(0,0,0,0);
+  Object.keys(state.logs).sort().forEach(function(ds){
+    var d=new Date(ds);
+    if(d<cutoff)return;
     var lg=state.logs[ds];
-    if(lg&&!lg.rested){
-      var v=calcVolume(lg.exercises);
-      volPoints.push({d:dd,v:v,ds:ds});
-    }
-  }
+    if(!lg||lg.rested)return;
+    var v=calcVolume(lg.exercises);
+    var mm=d.getMonth()+1,dd=d.getDate();
+    volPoints.push({d:mm+'/'+dd,v:v,ds:ds});
+  });
 
-  var exNamesThisMonth=[];
+  var exNamesChart=[];
   var _seen={};
   volPoints.forEach(function(pt){
     var log=state.logs[pt.ds];
     if(!log)return;
     (log.exercises||[]).forEach(function(ex){
-      if(!_seen[ex.name]){_seen[ex.name]=true;exNamesThisMonth.push(ex.name);}
+      if(!_seen[ex.name]){_seen[ex.name]=true;exNamesChart.push(ex.name);}
     });
   });
-  exNamesThisMonth.sort();
+  exNamesChart.sort();
 
   var selEx=state.historySelectedEx;
   if(selEx&&!_seen[selEx]){selEx=null;state.historySelectedEx=null;}
@@ -544,7 +548,7 @@ function renderHistory(){
   dropHtml+='<span style="font-size:13px;font-weight:600;color:#aaa;white-space:nowrap">운동별</span>';
   dropHtml+='<div id="ex-scroll-row" style="overflow-x:auto;display:flex;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch">';
   dropHtml+='<button data-action="hist-sel-ex" data-name="" id="exbtn-" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===null?"#111":"#f2f2f7")+';color:'+(selEx===null?"#fff":"#555")+'">전체</button>';
-  exNamesThisMonth.forEach(function(n){
+  exNamesChart.forEach(function(n){
     var btnId='exbtn-'+n.replace(/[^a-zA-Z0-9]/g,'_');
     dropHtml+='<button data-action="hist-sel-ex" data-name="'+n+'" id="'+btnId+'" style="flex-shrink:0;padding:6px 12px;border-radius:99px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:'+(selEx===n?"#111":"#f2f2f7")+';color:'+(selEx===n?"#fff":"#555")+'">'+n+'</button>';
   });
@@ -606,7 +610,7 @@ function renderHistory(){
     if(volPoints.length===1){
       // 점 하나만 표시
       var cx=xp(0),cy=yp(volPoints[0].v);
-      svg+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+volPoints[0].d+'일</text>';
+      svg+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+volPoints[0].d+'</text>';
       svg+='<circle cx="'+cx+'" cy="'+cy+'" r="3.5" fill="#111" stroke="#fff" stroke-width="1.5"/>';
     } else {
       var aPath="M"+xp(0)+","+yp(volPoints[0].v);
@@ -621,7 +625,7 @@ function renderHistory(){
       var step=Math.ceil(volPoints.length/6);
       volPoints.forEach(function(p,i){
         if(i%step!==0&&i!==volPoints.length-1)return;
-        svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'일</text>';
+        svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'</text>';
       });
       volPoints.forEach(function(p,i){
         svg+='<circle cx="'+xp(i)+'" cy="'+yp(p.v)+'" r="3.5" fill="#111" stroke="#fff" stroke-width="1.5"/>';
