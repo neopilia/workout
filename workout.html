@@ -292,7 +292,9 @@ var state={
   logDate:{str:todayStr(),kr:todayKr(),label:"오늘"},
   logRested:false,logSets:[],logMemo:"",logSaved:false,
   logRoutineSync:null,missedDismissed:false,missedSelected:null,sheet:null,
-  historySelectedEx:null,historyMonth:null
+  historySelectedEx:null,historyMonth:null,
+  llmGatewayUrl:localStorage.getItem("llm_gateway_url")||"http://llm-gateway:4000",
+  aiAnalysisStatus:null
 };
 
 function initLogState(dStr,dayKr){
@@ -674,13 +676,22 @@ function renderSettings(){
     '<button class="btn-secondary" data-action="restore" style="margin:0;width:100%">백업 파일 불러오기</button>'+
     '<input type="file" id="restore-file" accept=".json,application/json,text/plain" style="display:none">'+
     '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:20px 20px 20px">'+
-    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">Claude AI 루틴 분석</div>'+
-    '<div style="font-size:14px;color:#888;margin-bottom:6px;line-height:1.5">① 분석 파일을 내보내 Claude에게 업로드하세요.</div>'+
-    '<div style="font-size:13px;color:#bbb;margin-bottom:14px;line-height:1.6;padding:10px 14px;background:#f9f9f9;border-radius:12px">'+
-    '💬 이렇게 말해보세요:<br><em style="color:#999">\"이 파일로 내 운동 패턴을 분석하고 개선된 루틴을 workout_routine.json 파일로 만들어줘\"</em></div>'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">AI 루틴 분석</div>'+
+    '<div style="font-size:13px;color:#888;margin-bottom:10px;line-height:1.5">운동 데이터를 AI에 전송해 개선된 루틴을 자동으로 받아 적용합니다.</div>'+
+    '<div style="margin-bottom:12px">'+
+    '<div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:6px">게이트웨이 URL</div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<input id="gateway-url-input" type="url" value="'+escHtml(state.llmGatewayUrl)+'" placeholder="http://서버IP:4000" style="flex:1;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-family:inherit;background:#fff;color:#111;outline:none">'+
+    '<button data-action="save-gateway-url" style="padding:10px 14px;border-radius:10px;border:none;background:#f2f2f7;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">저장</button>'+
+    '</div></div>'+
+    (state.aiAnalysisStatus==="loading"
+      ? '<button disabled style="margin:0 0 10px;width:100%;padding:14px;border-radius:12px;border:none;background:#f2f2f7;color:#aaa;font-size:15px;font-weight:700;cursor:default;font-family:inherit">분석 중… (30초~1분 소요)</button>'
+      : '<button data-action="ai-analysis" style="margin:0 0 10px;width:100%;padding:14px;border-radius:12px;border:none;background:#111;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">🤖 AI 분석</button>')+
+    '<div style="height:1px;background:#f0f0f0;margin:4px 0 14px"></div>'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">수동 분석 (Claude)</div>'+
+    '<div style="font-size:13px;color:#888;margin-bottom:10px;line-height:1.5">① 분석 파일을 내보내 Claude에게 업로드하세요.</div>'+
     '<button class="btn-primary" data-action="export-for-claude" style="margin:0 0 10px;width:100%">📤 분석 파일 내보내기</button>'+
-    '<div style="height:1px;background:#f0f0f0;margin:14px 0"></div>'+
-    '<div style="font-size:14px;color:#888;margin-bottom:14px;line-height:1.5">② Claude가 만들어준 루틴 파일을 불러와서 교체합니다.</div>'+
+    '<div style="font-size:13px;color:#888;margin-bottom:10px;line-height:1.5">② Claude가 만들어준 루틴 파일을 불러와서 교체합니다.</div>'+
     '<button class="btn-secondary" data-action="import-routine" style="margin:0;width:100%">📥 새 루틴 파일 불러오기</button>'+
     '<input type="file" id="import-routine-file" accept=".json,application/json,text/plain" style="display:none">'+
     '</div></div>'+
@@ -969,6 +980,12 @@ function handleAction(el,e){
   if(a==="close-sheet"){state.sheet=null;render();return;}
   if(a==="export-for-claude"){exportForClaude();return;}
   if(a==="import-routine"){importRoutine();return;}
+  if(a==="save-gateway-url"){
+    var inp=document.getElementById("gateway-url-input");
+    if(inp){state.llmGatewayUrl=inp.value.trim();localStorage.setItem("llm_gateway_url",state.llmGatewayUrl);showToast("URL이 저장되었습니다");}
+    return;
+  }
+  if(a==="ai-analysis"){aiAnalysis();return;}
   if(a==="backup"){backup();return;}
   if(a==="restore"){restore();return;}
 }
@@ -1000,7 +1017,7 @@ function showToast(msg){
   setTimeout(function(){t.style.opacity="0";setTimeout(function(){t.remove();},200);},2000);
 }
 
-function exportForClaude(){
+function buildAnalysisPayload(){
   // ── 1. 운동별 통계 집계 ──
   // challengeSet = 각 운동의 마지막 세트 (도전 세트)
   var exMap={};
@@ -1244,6 +1261,11 @@ function exportForClaude(){
     ].join("\n")
   };
 
+  return payload;
+}
+
+function exportForClaude(){
+  var payload=buildAnalysisPayload();
   var json=JSON.stringify(payload,null,2);
   var filename="workout_analysis_"+todayStr()+".json";
   var blob=new Blob([json],{type:"application/json"});
@@ -1257,6 +1279,86 @@ function exportForClaude(){
   a.href=url;a.download=filename;
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   showToast("분석 파일을 내보냈습니다 📤");
+}
+
+async function aiAnalysis(){
+  var gatewayUrl=(state.llmGatewayUrl||"http://llm-gateway:4000").replace(/\/+$/,"");
+  var data=buildAnalysisPayload();
+  // PROMPT_FOR_CLAUDE 제거 — 프롬프트에 직접 지시 포함
+  delete data.PROMPT_FOR_CLAUDE;
+
+  var prompt=[
+    "아래는 myWorkout 앱의 운동 데이터야. 분석해서 개선된 루틴을 아래 JSON 형식으로만 출력해줘.",
+    "JSON 외 텍스트(마크다운 코드블록 포함)는 절대 포함하지 마. { 로 시작해서 } 로 끝나는 JSON만.",
+    "",
+    "출력 형식:",
+    "{",
+    "  \"월요일\": { \"name\": string, \"exercises\": [ { \"name\": string, \"sets\": Set[] } ] },",
+    "  ... (7개 요일 모두)",
+    "}",
+    "Set 타입:",
+    "  중량운동: {\"w\": kg숫자, \"r\": 횟수}",
+    "  맨몸: {\"w\": 0, \"r\": 횟수}",
+    "  런닝머신: {\"incline\": 숫자, \"speed\": 숫자, \"min\": 숫자}",
+    "  휴식일: exercises: []",
+    "",
+    "중량 단위: 머신 5kg, 덤벨/바벨 2.5kg 단위만 사용.",
+    "세트 구성: 주력 세트 반복 후 마지막에 도전 세트 1개 추가.",
+    "증량 기준:",
+    "  consecutiveChallengeSuccess >= 3 → 주력+도전 모두 한 단계 올리기",
+    "  consecutiveChallengeSuccess = 2  → 도전 세트만 한 단계 올리기",
+    "  consecutiveChallengeSuccess = 1  → 도전 세트 유지",
+    "  consecutiveChallengeSuccess = 0  → 도전 세트 없으면 추가",
+    "",
+    "운동 데이터:",
+    JSON.stringify(data)
+  ].join("\n");
+
+  state.aiAnalysisStatus="loading";
+  render();
+
+  try{
+    var res=await fetch(gatewayUrl+"/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({prompt:prompt,newChat:true})
+    });
+    if(!res.ok){
+      var errData=await res.json().catch(function(){return {};});
+      throw new Error(errData.message||"HTTP "+res.status);
+    }
+    var resData=await res.json();
+    var content=resData.content||"";
+    var jsonMatch=content.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error("응답에서 JSON을 찾을 수 없습니다");
+    var newRoutine=JSON.parse(jsonMatch[0]);
+    var required=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
+    var missing=required.filter(function(d){return !newRoutine[d];});
+    if(missing.length>0)throw new Error("누락된 요일: "+missing.join(", "));
+
+    var preview=required.map(function(d){
+      var info=newRoutine[d];
+      var exNames=(info.exercises||[]).map(function(e){return e.name;}).join(", ")||"휴식";
+      return d+": "+info.name+" ("+exNames+")";
+    }).join("\n");
+
+    state.aiAnalysisStatus=null;
+    render();
+
+    if(!confirm("AI 분석 완료! 새 루틴으로 교체할까요?\n\n"+preview+"\n\n⚠️ 기존 루틴은 덮어쓰기됩니다. 운동 기록은 유지됩니다."))return;
+
+    state.routine=migrateTreadmill(newRoutine);
+    saveR(state.routine);
+    var ls=initLogState(state.logDate.str,state.logDate.kr);
+    state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
+    state.logSaved=!!state.logs[state.logDate.str];
+    render();
+    showToast("AI 개선 루틴이 적용되었습니다 ✅");
+  }catch(err){
+    state.aiAnalysisStatus=null;
+    render();
+    alert("AI 분석 오류: "+err.message);
+  }
 }
 
 function importRoutine(){
