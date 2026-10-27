@@ -147,69 +147,79 @@ body{
 <div id="layout"><div id="app-scroll"><div id="app"></div></div></div>
 <div id="tabbar">
   <div class="tab-seg">
-    <button class="tab-btn active" data-tab="today">오늘</button>
+    <button class="tab-btn active" data-tab="log">오늘</button>
     <button class="tab-btn" data-tab="routine">루틴</button>
-    <button class="tab-btn" data-tab="log">기록</button>
     <button class="tab-btn" data-tab="history">통계</button>
   </div>
 </div>
 <script>
 var DAYS=["월요일","화요일","수요일","목요일","금요일","토요일","일요일"];
 var DEFAULT_ROUTINE={
-  "월요일":{name:"휴식",exercises:[]},
-  "화요일":{name:"가슴 + 삼두",exercises:[
+  "가슴+삼두+어깨":{exercises:[
     {name:"Chest Press",sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Pec Deck",sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Arm Extension",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
-    {name:"런닝머신",sets:[{incline:1,speed:6,min:20}]}
+    {name:"pec deck",sets:[{w:15,r:10},{w:20,r:10},{w:20,r:10}]},
+    {name:"Shoulder Press",sets:[{w:15,r:10},{w:15,r:10},{w:15,r:10}]},
+    {name:"Arm Extension",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10}]},
+    {name:"런닝머신",sets:[{incline:9,speed:5.5,min:20}]}
   ]},
-  "수요일":{name:"하체",exercises:[
+  "하체":{exercises:[
     {name:"Squat",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
     {name:"Leg Curl",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
     {name:"Leg Extension",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
     {name:"Back Extension",sets:[{w:0,r:13},{w:0,r:13},{w:0,r:13}]},
-    {name:"런닝머신",sets:[{incline:1,speed:6,min:20}]}
+    {name:"런닝머신",sets:[{incline:9,speed:5.5,min:20}]}
   ]},
-  "목요일":{name:"등",exercises:[
+  "등+이두":{exercises:[
     {name:"Lat Pull Down",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
-    {name:"Row",sets:[{w:35,r:13},{w:35,r:13},{w:35,r:13}]},
-    {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]},
-    {name:"런닝머신",sets:[{incline:1,speed:6,min:20}]}
+    {name:"Row",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
+    {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10}]},
+    {name:"런닝머신",sets:[{incline:9,speed:5.5,min:20}]}
   ]},
-  "금요일":{name:"휴식",exercises:[]},
-  "토요일":{name:"전체",exercises:[
-    {name:"Squat",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
-    {name:"Leg Extension",sets:[{w:20,r:13},{w:20,r:13},{w:25,r:13}]},
-    {name:"Chest Press",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
-    {name:"Rear Delt Row",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
+  "전체(회복)":{exercises:[
+    {name:"Chest Press",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
     {name:"Lat Pull Down",sets:[{w:30,r:10},{w:30,r:10},{w:30,r:10}]},
-    {name:"Shoulder Press",sets:[{w:15,r:10},{w:15,r:10},{w:15,r:10}]},
-    {name:"Arm Extension",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10},{w:5,r:10},{w:2.5,r:10}]},
-    {name:"Crunch",sets:[{w:0,r:15},{w:0,r:15},{w:0,r:15}]}
-  ]},
-  "일요일":{name:"휴식",exercises:[]}
+    {name:"Squat",sets:[{w:20,r:10},{w:20,r:10},{w:20,r:10}]},
+    {name:"Arm Curl",sets:[{w:5,r:10},{w:5,r:10}]}
+  ]}
 };
 
 var RK="workout_routine_v1",LK="workout_logs_v1";
 function migrateTreadmill(routine){
-  Object.keys(routine).forEach(function(day){
-    routine[day].exercises.forEach(function(ex){
-      if(ex.name==="런닝머신"){
-        ex.sets=ex.sets.map(function(s){
-          if(s.incline==null&&s.speed==null&&s.min!=null){
-            return{incline:1,speed:6,min:s.min};
-          }
-          return s;
-        });
-      }
-    });
+  Object.keys(routine).forEach(function(key){
+    var info=routine[key];
+    var exList=info.exercises||info; // support both {exercises:[]} and old day format
+    if(Array.isArray(exList)){exList.forEach(function(ex){
+      if(ex.name==="런닝머신"){ex.sets=ex.sets.map(function(s){
+        if(s.incline==null&&s.speed==null&&s.min!=null)return{incline:1,speed:6,min:s.min};
+        return s;
+      });}
+    });}
   });
   return routine;
 }
-function loadR(){try{var s=localStorage.getItem(RK);return s?migrateTreadmill(JSON.parse(s)):JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}catch(e){return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}}function loadL(){
+function migrateRoutineFormat(routine){
+  // Convert old day-based format to type-based format
+  if(!routine["월요일"]&&!routine["화요일"]&&!routine["수요일"])return routine;
+  var newR={};
+  DAYS.forEach(function(day){
+    var info=routine[day];
+    if(!info)return;
+    var name=info.name,exs=info.exercises||[];
+    if(!name||name==="휴식"||exs.length===0)return;
+    newR[name]={exercises:exs};
+  });
+  return Object.keys(newR).length>0?newR:JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+}
+function loadR(){
+  try{
+    var s=localStorage.getItem(RK);
+    if(!s)return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+    var r=JSON.parse(s);
+    r=migrateRoutineFormat(r);
+    migrateTreadmill(r);
+    return r;
+  }catch(e){return JSON.parse(JSON.stringify(DEFAULT_ROUTINE));}
+}function loadL(){
   try{
     var s=localStorage.getItem(LK);
     if(!s)return{};
@@ -240,26 +250,15 @@ function fmtSet(s){
 }
 function dc(o){return JSON.parse(JSON.stringify(o));}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function getWeekRoutineDays(){
-  var res=[];
-  DAYS.forEach(function(kr){
-    if(state.routine[kr]&&state.routine[kr].exercises.length>0)res.push({kr:kr});
+function getRoutineTypes(){
+  return Object.keys(state.routine).filter(function(k){
+    return state.routine[k].exercises&&state.routine[k].exercises.length>0;
   });
-  return res;
-}
-function getPast2(){
-  var res=[];
-  for(var i=0;i<2;i++){
-    var d=new Date();d.setDate(d.getDate()-i);
-    res.push({str:d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()),
-      kr:DAYS[d.getDay()===0?6:d.getDay()-1],label:i===0?"오늘":"어제"});
-  }
-  return res;
 }
 function allExNames(){
   var seen={},res=[];
-  Object.keys(state.routine).forEach(function(day){
-    state.routine[day].exercises.forEach(function(ex){
+  Object.keys(state.routine).forEach(function(key){
+    (state.routine[key].exercises||[]).forEach(function(ex){
       if(!seen[ex.name]){seen[ex.name]=true;res.push(ex.name);}
     });
   });
@@ -277,9 +276,9 @@ function allExNames(){
 }
 function exRefSets(name){
   var found=null;
-  Object.keys(state.routine).forEach(function(day){
+  Object.keys(state.routine).forEach(function(key){
     if(found)return;
-    state.routine[day].exercises.forEach(function(ex){
+    (state.routine[key].exercises||[]).forEach(function(ex){
       if(!found&&ex.name===name&&ex.sets.length>0)found=dc(ex.sets);
     });
   });
@@ -287,11 +286,10 @@ function exRefSets(name){
 }
 
 var state={
-  tab:"today",prevTab:"today",routine:loadR(),logs:loadL(),
+  tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
   routineOpenDay:null,historyOpen:null,
-  logDate:{str:todayStr(),kr:todayKr(),label:"오늘"},
-  logRested:false,logSets:[],logMemo:"",logSaved:false,
-  logRoutineSync:null,missedDismissed:false,missedSelected:null,sheet:null,
+  logSets:[],logSaved:false,
+  logRoutineSync:null,selectedRoutine:null,sheet:null,
   historySelectedEx:null,historyMonth:null,
   llmGatewayUrl:localStorage.getItem("llm_gateway_url")||"http://llm-gateway:4000",
   aiAnalysisStatus:null,
@@ -299,11 +297,11 @@ var state={
   githubAutoBackup:localStorage.getItem("github_auto_backup")!=="false"
 };
 
-function initLogState(dStr,dayKr){
+function initLogState(){
+  var dStr=todayStr();
   var log=state.logs[dStr];
-  if(log)return{rested:log.rested||false,sets:dc(log.exercises),memo:log.memo||""};
-  var info=state.routine[dayKr];
-  return{rested:false,sets:info?info.exercises.map(function(ex){return{name:ex.name,sets:dc(ex.sets)};}):[],memo:""};
+  if(log&&!log.rested)return{sets:dc(log.exercises||[])};
+  return{sets:[]};
 }
 
 function updateTabBar(){
@@ -316,45 +314,13 @@ function updateTabBar(){
 
 function render(){
   updateTabBar();
-  var pages={today:renderToday,routine:renderRoutine,log:renderLog,
-             history:renderHistory,settings:renderSettings};
-  document.getElementById("app").innerHTML=(pages[state.tab]||renderToday)();
+  var pages={log:renderLog,routine:renderRoutine,history:renderHistory,settings:renderSettings};
+  document.getElementById("app").innerHTML=(pages[state.tab]||renderLog)();
   var old=document.getElementById("sheet-root");if(old)old.remove();
   if(state.sheet){
     var div=document.createElement("div");div.id="sheet-root";
     div.innerHTML=renderSheet();document.body.appendChild(div);
   }
-}
-
-function renderToday(){
-  var today=todayKr(),info=state.routine[today],log=state.logs[todayStr()];
-  var isRest=!info||info.exercises.length===0;
-
-  if(isRest){
-    return '<div class="page-header"><div class="page-title">'+today+'</div>'+
-      '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
-      '</div>'+
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 24px 24px;gap:14px">'+
-      '<img src="rest.png" style="width:280px;height:auto" alt="휴식">'+
-      '<div style="font-size:22px;font-weight:800;color:#111;letter-spacing:-0.3px">오늘은 휴식일</div>'+
-      '<div style="font-size:15px;color:#bbb;font-weight:500">잘 쉬어야 잘 성장해요</div>'+
-      '</div>'+
-      '<button class="btn-primary" data-action="go-log" style="background:#f2f2f7;color:#888">운동했다면 기록하기</button>'+
-      '<div style="height:200px"></div>';
-  }
-
-  var rows="";
-  info.exercises.forEach(function(ex){
-    var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
-      ex.sets.map(function(s){return '<span class="chip-label">'+fmtSet(s)+'</span>';}).join("");
-    rows+='<div class="card-row"><div style="flex:1"><div style="font-size:15px;font-weight:600;color:#111;margin-bottom:5px">'+ex.name+'</div><div style="display:flex;flex-wrap:wrap">'+chips+'</div></div></div>';
-  });
-
-  return '<div class="page-header"><div class="page-title">'+today+'</div>'+
-    '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
-    '</div><div class="card" style="margin-bottom:16px">'+rows+'</div>'+
-    '<button class="btn-primary" data-action="go-log">오늘 운동 기록하기</button>'+
-    '<div style="height:120px"></div>';
 }
 
 function renderRoutine(){
@@ -364,8 +330,8 @@ function renderRoutine(){
     var body="";
     if(isOpen){
       var rows="";
-      if(info.exercises.length===0){
-        rows='<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">휴식일</div>';
+      if(!info.exercises||info.exercises.length===0){
+        rows='<div style="text-align:center;padding:18px 0;color:#bbb;font-size:14px;font-weight:500">운동 없음</div>';
       } else {
         info.exercises.forEach(function(ex,i){
           var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
@@ -380,15 +346,14 @@ function renderRoutine(){
       body='<div style="padding:0 16px 16px">'+rows+
         '<button class="btn-secondary" data-action="open-add-ex" data-day="'+day+'" style="margin:14px 0 0;width:100%">+ 운동 추가</button></div>';
     } else {
-      var chips2=info.exercises.length===0?'<span style="font-size:13px;color:#bbb;font-weight:500">휴식</span>':
+      var chips2=!info.exercises||info.exercises.length===0?'<span style="font-size:13px;color:#bbb;font-weight:500">운동 없음</span>':
         info.exercises.slice(0,4).map(function(ex){return '<span class="chip-label">'+ex.name+'</span>';}).join("")+
         (info.exercises.length>4?'<span style="font-size:13px;color:#aaa;font-weight:500"> +'+(info.exercises.length-4)+'</span>':"");
       body='<div style="padding:0 16px 14px;display:flex;flex-wrap:wrap;gap:5px;align-items:center">'+chips2+'</div>';
     }
     html+='<div class="card" style="margin-bottom:10px">'+
       '<div style="padding:16px;display:flex;align-items:center;cursor:pointer" data-action="toggle-routine" data-day="'+day+'">'+
-      '<div style="flex:1;display:flex;align-items:baseline;gap:8px"><div style="font-size:17px;font-weight:700;color:#111">'+day+'</div>'+
-      '<div style="font-size:13px;color:#aaa;font-weight:500">'+info.name+'</div></div>'+
+      '<div style="flex:1"><div style="font-size:17px;font-weight:700;color:#111">'+day+'</div></div>'+
       '<span style="font-size:12px;color:#ccc;font-weight:600">'+(isOpen?"▲":"▼")+'</span></div>'+body+'</div>';
   });
   html+='<div style="height:120px"></div>';
@@ -396,54 +361,38 @@ function renderRoutine(){
 }
 
 function renderLog(){
-  var ld=state.logDate,rInfo=state.routine[ld.kr];
+  var types=getRoutineTypes();
+  var sel=state.selectedRoutine;
+  var rBtns=types.map(function(t){
+    var active=sel===t;
+    return '<button data-action="select-routine" data-routine="'+escHtml(t)+'" style="padding:8px 14px;border-radius:99px;border:1.5px solid '+(active?'#111':'#ddd')+';background:'+(active?'#111':'#fff')+';color:'+(active?'#fff':'#888')+';font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">'+escHtml(t)+(active?' ✓':'')+'</button>';
+  }).join('');
+  var routineHtml='<div class="card" style="margin-bottom:10px"><div style="padding:14px 16px">'+
+    '<div style="margin-bottom:10px"><span style="font-size:12px;color:#aaa;font-weight:500">루틴 선택</span></div>'+
+    '<div style="display:flex;gap:6px;flex-wrap:wrap">'+rBtns+'</div></div></div>';
   var exHtml="";
-  if(!state.logRested){
-    var missedDays=getWeekRoutineDays();
-    if(missedDays.length>0){
-      var btns=missedDays.map(function(m){
-        var sel=state.missedSelected===m.kr;
-        return '<button data-action="fetch-missed" data-kr="'+m.kr+'" style="padding:8px 14px;border-radius:99px;border:1.5px solid '+(sel?'#111':'#ddd')+';background:'+(sel?'#111':'#fff')+';color:'+(sel?'#fff':'#888')+';font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">'+m.kr.replace('요일','')+(sel?' ✓':'')+'</button>';
-      }).join('');
-      exHtml='<div class="card" style="margin-bottom:10px"><div style="padding:14px 16px"><div style="margin-bottom:10px"><span style="font-size:12px;color:#aaa;font-weight:500">루틴 가져오기</span></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+btns+'</div></div></div>';
-    }
-    if(state.logSets.length===0){
-      exHtml+='<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">운동을 추가해 주세요</div>';
-    } else {
-      var rNames={};
-      (rInfo?rInfo.exercises:[]).forEach(function(e){rNames[e.name]=true;});
-      state.logSets.forEach(function(ex,i){
-        var synced=!!(state.logRoutineSync&&state.logRoutineSync[ex.name]);
-        var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
-          ex.sets.map(function(s,si){return '<button class="set-chip" data-action="log-set" data-ei="'+i+'" data-si="'+si+'">'+fmtSet(s)+'</button>';}).join("");
-        var syncBtn='<button data-action="log-sync" data-name="'+ex.name+'" style="font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1.5px solid '+(synced?"#111":"#ddd")+';background:'+(synced?"#111":"transparent")+';color:'+(synced?"#fff":"#aaa")+';cursor:pointer;font-family:inherit">루틴 반영'+(synced?" ✓":"")+'</button>';
-        exHtml+='<div class="ex-card" data-drag-idx="'+i+'">'+
-          '<div class="ex-card-header"><div class="drag-handle" data-drag-handle="1">⠿</div>'+
-          '<span class="ex-card-name">'+ex.name+'</span>'+
-          '<button class="btn-icon danger" data-action="log-remove" data-ei="'+i+'">✕</button></div>'+
-          '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'+chips+'</div>'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-          '<button class="set-chip" data-action="log-add-set" data-ei="'+i+'" style="color:#111;font-weight:700;border:1.5px dashed #ddd">+ 세트</button>'+
-          syncBtn+'</div></div>';
-      });
-    }
-    exHtml+='<button class="btn-secondary" data-action="open-add-ex" data-day="__log__" style="margin-bottom:10px">+ 다른 운동 추가</button>';
+  if(state.logSets.length===0){
+    exHtml='<div style="text-align:center;padding:28px 0;color:#bbb;font-size:15px;font-weight:500">루틴을 선택하거나 운동을 추가해 주세요</div>';
+  } else {
+    state.logSets.forEach(function(ex,i){
+      var synced=!!(state.logRoutineSync&&state.logRoutineSync[ex.name]);
+      var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
+        ex.sets.map(function(s,si){return '<button class="set-chip" data-action="log-set" data-ei="'+i+'" data-si="'+si+'">'+fmtSet(s)+'</button>';}).join("");
+      var syncBtn='<button data-action="log-sync" data-name="'+ex.name+'" style="font-size:13px;font-weight:600;padding:7px 13px;border-radius:99px;border:1.5px solid '+(synced?"#111":"#ddd")+';background:'+(synced?"#111":"transparent")+';color:'+(synced?"#fff":"#aaa")+';cursor:pointer;font-family:inherit">루틴 반영'+(synced?" ✓":"")+'</button>';
+      exHtml+='<div class="ex-card" data-drag-idx="'+i+'">'+
+        '<div class="ex-card-header"><div class="drag-handle" data-drag-handle="1">⠿</div>'+
+        '<span class="ex-card-name">'+ex.name+'</span>'+
+        '<button class="btn-icon danger" data-action="log-remove" data-ei="'+i+'">✕</button></div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">'+chips+'</div>'+
+        '<div style="display:flex;align-items:center;justify-content:space-between">'+
+        '<button class="set-chip" data-action="log-add-set" data-ei="'+i+'" style="color:#111;font-weight:700;border:1.5px dashed #ddd">+ 세트</button>'+
+        syncBtn+'</div></div>';
+    });
   }
-  var p2=getPast2();
-  var dateHtml=p2.map(function(d){
-    var active=ld.str===d.str,log=state.logs[d.str];
-    return '<button class="date-seg-btn'+(active?" active":"")+'" data-action="log-date" data-str="'+d.str+'" data-kr="'+d.kr+'" data-label="'+d.label+'">'+
-      d.label+'<br><span style="font-size:12px;opacity:0.7">'+d.kr.replace("요일","")+'</span>'+
-      '</button>';
-  }).join("");
-  return '<div class="page-header"><div class="page-title">기록하기</div>'+
+  exHtml+='<button class="btn-secondary" data-action="open-add-ex" data-day="__log__" style="margin-bottom:10px">+ 다른 운동 추가</button>';
+  return '<div class="page-header"><div class="page-title">오늘</div>'+
     '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
-    '</div><div class="date-seg">'+dateHtml+'</div>'+
-    '<div class="card" style="margin-bottom:10px"><div style="padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" data-action="log-rest">'+
-    '<span style="font-size:16px;font-weight:600;color:'+(state.logRested?"#888":"#111")+'">'+(state.logRested?"쉬었어요":"운동했어요")+'</span>'+
-    '<div class="toggle'+(state.logRested?" on":"")+'"><div class="toggle-knob"></div></div></div></div>'+
-    exHtml+
-    '<div style="padding:0 16px 10px"><textarea data-action="log-memo" placeholder="메모" rows="3" style="width:100%;padding:14px 16px;font-size:15px;border:none;border-radius:16px;background:#fff;font-family:inherit;resize:none;color:#111">'+escHtml(state.logMemo)+'</textarea></div>'+
+    '</div>'+routineHtml+exHtml+
     (state.logSaved?'<div style="text-align:center;margin:4px 16px 0;padding:16px 0"><span class="saved-badge">저장됨 ✓</span></div>':'<button class="btn-primary" data-action="log-save">저장</button>')+
     '<div style="height:300px;background:#f2f2f7"></div>';
 }
@@ -835,7 +784,7 @@ function handleAction(el,e){
   var a=el.dataset.action;
   if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();scrollTop();return;}
   if(a==="go-settings"){state.prevTab=state.tab;state.tab="settings";render();scrollTop();return;}
-  if(a==="settings-back"){state.tab=state.prevTab||"today";render();scrollTop();return;}
+  if(a==="settings-back"){state.tab=state.prevTab||"log";render();scrollTop();return;}
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
   if(a==="open-history-sheet"){state.sheet={type:"historyDetail",date:el.dataset.date};render();return;}
@@ -894,38 +843,18 @@ function handleAction(el,e){
     else{state.routine[day3].exercises.push({name:nm,sets:[defSet]});saveR(state.routine);}
     state.sheet=null;render();return;
   }
-  if(a==="log-date"){
-    state.logDate={str:el.dataset.str,kr:el.dataset.kr,label:el.dataset.label};
-    state.logRoutineSync=null;
-    var ls=initLogState(el.dataset.str,el.dataset.kr);
-    state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
-    state.logSaved=!!state.logs[el.dataset.str];state.missedDismissed=false;state.missedSelected=null;render();return;
-  }
-  if(a==="fetch-missed"){
-    var kr=el.dataset.kr;
-    if(state.missedSelected===kr){
-      var ls=initLogState(state.logDate.str,state.logDate.kr);
-      state.logSets=ls.sets;state.logSaved=!!state.logs[state.logDate.str];
-      state.missedSelected=null;
+  if(a==="select-routine"){
+    var rt=el.dataset.routine;
+    if(state.selectedRoutine===rt){
+      state.selectedRoutine=null;state.logSets=[];state.logSaved=false;
     } else {
-      var info=state.routine[kr];
-      if(info&&info.exercises.length>0){
-        state.logSets=info.exercises.map(function(ex){return{name:ex.name,sets:dc(ex.sets)};});
-        state.logSaved=false;
-      }
-      state.missedSelected=kr;
+      state.selectedRoutine=rt;
+      var rInfo=state.routine[rt];
+      state.logSets=rInfo?rInfo.exercises.map(function(ex){return{name:ex.name,sets:dc(ex.sets)};}):[];
+      state.logSaved=false;
     }
-    render();return;
+    state.logRoutineSync=null;render();return;
   }
-  if(a==="dismiss-missed"){
-    if(state.missedSelected){
-      var ls=initLogState(state.logDate.str,state.logDate.kr);
-      state.logSets=ls.sets;state.logSaved=!!state.logs[state.logDate.str];
-      state.missedSelected=null;
-    }
-    state.missedDismissed=true;render();return;
-  }
-  if(a==="log-rest"){state.logRested=!state.logRested;state.logSaved=false;render();return;}
   if(a==="log-remove"){state.logSets.splice(parseInt(el.dataset.ei),1);state.logSaved=false;render();return;}
   if(a==="log-add-set"){
     var ex2=state.logSets[parseInt(el.dataset.ei)];
@@ -937,21 +866,22 @@ function handleAction(el,e){
     var n=el.dataset.name;state.logRoutineSync[n]=!state.logRoutineSync[n];render();return;
   }
   if(a==="log-save"){
-    var ld=state.logDate;
-    state.logs[ld.str]={day:ld.kr,rested:state.logRested,exercises:dc(state.logSets),memo:state.logMemo};
+    var dStr=todayStr(),dKr=todayKr();
+    state.logs[dStr]={day:dKr,exercises:dc(state.logSets)};
     saveL(state.logs);
-    if(state.logRoutineSync&&state.routine[ld.kr]&&!state.logRested){
+    var sel=state.selectedRoutine;
+    if(state.logRoutineSync&&sel&&state.routine[sel]){
       var changed=false;
       var routineNames={};
-      state.routine[ld.kr].exercises.forEach(function(re){routineNames[re.name]=true;});
-      state.routine[ld.kr].exercises=state.routine[ld.kr].exercises.map(function(re){
+      state.routine[sel].exercises.forEach(function(re){routineNames[re.name]=true;});
+      state.routine[sel].exercises=state.routine[sel].exercises.map(function(re){
         if(state.logRoutineSync[re.name]){
           var lg=null;
           state.logSets.forEach(function(ls2){if(ls2.name===re.name)lg=ls2;});
           if(lg){
             changed=true;
             var newSets=dc(lg.sets);
-            syncExerciseAcrossDays(ld.kr,re.name,newSets);
+            syncExerciseAcrossDays(sel,re.name,newSets);
             return Object.assign({},re,{sets:newSets});
           }
         }
@@ -960,13 +890,13 @@ function handleAction(el,e){
       state.logSets.forEach(function(ls2){
         if(state.logRoutineSync[ls2.name]&&!routineNames[ls2.name]){
           changed=true;
-          state.routine[ld.kr].exercises.push({name:ls2.name,sets:dc(ls2.sets)});
+          state.routine[sel].exercises.push({name:ls2.name,sets:dc(ls2.sets)});
         }
       });
       if(changed)saveR(state.routine);
     }
     state.logRoutineSync=null;state.logSaved=true;render();
-    showToast((ld.label==="오늘"?"오늘":ld.label)+" 운동이 저장되었습니다");
+    showToast("오늘 운동이 저장되었습니다");
     if(state.githubPat&&state.githubAutoBackup)githubBackup(false);
     return;
   }
@@ -1020,7 +950,7 @@ function initEvents(){
   document.getElementById("tabbar").addEventListener("click",function(e){
     var btn=e.target.closest(".tab-btn");
     if(!btn||!btn.dataset.tab)return;
-    state.tab=btn.dataset.tab;state.logRoutineSync=null;state.missedDismissed=false;state.missedSelected=null;render();scrollTop();
+    state.tab=btn.dataset.tab;state.logRoutineSync=null;render();scrollTop();
   });
   document.addEventListener("click",function(e){
     if(e.target.classList&&e.target.classList.contains("sheet-overlay")){state.sheet=null;render();return;}
@@ -1029,9 +959,7 @@ function initEvents(){
     if(el.closest("#tabbar"))return;
     handleAction(el,e);
   });
-  document.addEventListener("input",function(e){
-    if(e.target.dataset&&e.target.dataset.action==="log-memo"){state.logMemo=e.target.value;state.logSaved=false;}
-  });
+  document.addEventListener("input",function(e){});
 }
 
 function showToast(msg){
@@ -1158,7 +1086,7 @@ function buildAnalysisPayload(){
   Object.keys(state.routine).forEach(function(day){
     var info=state.routine[day];
     routineSummary[day]={
-      name:info.name,
+      name:day,
       exercises:(info.exercises||[]).map(function(ex){
         var repSet=ex.sets[0]||{};
         var repr=repSet.incline!=null?(repSet.incline+"%/"+repSet.speed+"km/"+repSet.min+"분"):
@@ -1373,11 +1301,11 @@ async function aiAnalysis(){
 
     if(!confirm("AI 분석 완료! 새 루틴으로 교체할까요?\n\n"+preview+"\n\n⚠️ 기존 루틴은 덮어쓰기됩니다. 운동 기록은 유지됩니다."))return;
 
-    state.routine=migrateTreadmill(newRoutine);
+    state.routine=migrateRoutineFormat(migrateTreadmill(newRoutine));
     saveR(state.routine);
-    var ls=initLogState(state.logDate.str,state.logDate.kr);
-    state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
-    state.logSaved=!!state.logs[state.logDate.str];
+    var ls=initLogState();
+    state.logSets=ls.sets;
+    state.logSaved=!!state.logs[todayStr()];
     render();
     showToast("AI 개선 루틴이 적용되었습니다 ✅");
   }catch(err){
@@ -1417,11 +1345,11 @@ function importRoutine(){
           return d+": "+info.name+" ("+exNames+")";
         }).join("\n");
         if(!confirm("새 루틴으로 교체할까요?\n\n"+preview+"\n\n⚠️ 기존 루틴은 덮어쓰기됩니다. 운동 기록은 유지됩니다."))return;
-        state.routine=migrateTreadmill(newRoutine);
+        state.routine=migrateRoutineFormat(migrateTreadmill(newRoutine));
         saveR(state.routine);
-        var ls=initLogState(state.logDate.str,state.logDate.kr);
-        state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
-        state.logSaved=!!state.logs[state.logDate.str];
+        var ls=initLogState();
+        state.logSets=ls.sets;
+        state.logSaved=!!state.logs[todayStr()];
         render();
         showToast("새 루틴이 적용되었습니다 ✅");
       }catch(err){alert("파일을 읽는 중 오류가 발생했습니다.\n\n유효한 JSON 파일인지 확인해 주세요.");}
@@ -1435,7 +1363,7 @@ function exportRoutine(){
   var lines=["===== 운동 루틴 =====","내보낸 날짜: "+todayStr(),""];
   Object.keys(state.routine).forEach(function(day){
     var info=state.routine[day];
-    lines.push("[ "+day+" — "+info.name+" ]");
+    lines.push("[ "+day+" ]");
     if(!info.exercises.length){lines.push("  휴식");}
     else info.exercises.forEach(function(ex){
       lines.push("  • "+ex.name+(ex.sets.length===0?": 자유":": "+ex.sets.map(function(s,i){return "세트"+(i+1)+" "+fmtSet(s);}).join(" / ")));
@@ -1505,11 +1433,12 @@ function restore(){
         var data=JSON.parse(ev.target.result);
         if(!data.routine||!data.logs){alert("올바른 백업 파일이 아닙니다.");return;}
         if(!confirm("현재 데이터를 백업 파일로 덮어씁니다.\n계속하시겠습니까?"))return;
-        state.routine=data.routine;state.logs=data.logs;
+        state.routine=migrateRoutineFormat(migrateTreadmill(data.routine||{}));
+        state.logs=data.logs||{};
         saveR(state.routine);saveL(state.logs);
-        var ls=initLogState(state.logDate.str,state.logDate.kr);
-        state.logRested=ls.rested;state.logSets=ls.sets;state.logMemo=ls.memo;
-        state.logSaved=!!state.logs[state.logDate.str];
+        var ls=initLogState();
+        state.logSets=ls.sets;
+        state.logSaved=!!state.logs[todayStr()];
         render();showToast("복원 완료!");
       }catch(err){alert("파일을 읽는 중 오류가 발생했습니다.");}
     };
@@ -1574,9 +1503,9 @@ function initDragSort(){
 }
 
 (function(){
-  var s=initLogState(state.logDate.str,state.logDate.kr);
-  state.logRested=s.rested;state.logSets=s.sets;state.logMemo=s.memo;
-  state.logSaved=!!state.logs[state.logDate.str];
+  var s=initLogState();
+  state.logSets=s.sets;
+  state.logSaved=!!state.logs[todayStr()];
   render();
   initEvents();
   initDragSort();
