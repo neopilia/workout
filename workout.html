@@ -496,15 +496,11 @@ function renderHistory(){
   heatHtml+='</div></div></div>';
 
   var volPoints=[];
-  var cutoff=new Date(now);
-  cutoff.setMonth(cutoff.getMonth()-3);
-  cutoff.setHours(0,0,0,0);
   Object.keys(state.logs).sort().forEach(function(ds){
-    var d=new Date(ds);
-    if(d<cutoff)return;
     var lg=state.logs[ds];
     if(!lg||lg.rested)return;
     var v=calcVolume(lg.exercises);
+    var d=new Date(ds);
     var mm=d.getMonth()+1,dd=d.getDate();
     volPoints.push({d:mm+'/'+dd,v:v,ds:ds});
   });
@@ -602,9 +598,13 @@ function renderHistory(){
     var maxV=Math.max.apply(null,wPoints.map(function(p){return p.v;}));
     var minV=wPoints.length>1?Math.min.apply(null,wPoints.map(function(p){return p.v;})):0;
     var vRange=maxV-minV||1;
-    var bW=Math.max(4,Math.min(32,gW/wPoints.length*0.6));
-    function xp(i){return PL+(wPoints.length>1?i/(wPoints.length-1):0.5)*gW;}
+    // 막대 간격 고정: 주단위 32px, 월/연단위는 뷰포트 맞춤
+    var colW=period==="week"?32:(period==="month"?Math.max(32,gW/wPoints.length):Math.max(48,gW/wPoints.length));
+    var svgW=Math.max(W,PL+colW*wPoints.length+PR);
+    var svgGW=svgW-PL-PR;
+    function xp(i){return PL+(wPoints.length>1?i/(wPoints.length-1):0.5)*svgGW;}
     function yp(v){return PT+gH-(v-minV)/vRange*gH;}
+    var bW=Math.min(colW*0.65,28);
 
     var yTicks=[];
     for(var t=0;t<3;t++){
@@ -612,27 +612,24 @@ function renderHistory(){
       yTicks.push({v:Math.round(tv),y:yp(tv)});
     }
 
-    var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible" xmlns="http://www.w3.org/2000/svg">';
+    var svg='<svg viewBox="0 0 '+svgW+' '+H+'" width="'+svgW+'" height="'+H+'" style="display:block;overflow:visible" xmlns="http://www.w3.org/2000/svg">';
     yTicks.forEach(function(tk){
-      svg+='<line x1="'+PL+'" y1="'+tk.y+'" x2="'+(W-PR)+'" y2="'+tk.y+'" stroke="#f0f0f0" stroke-width="1"/>';
+      svg+='<line x1="'+PL+'" y1="'+tk.y+'" x2="'+(svgW-PR)+'" y2="'+tk.y+'" stroke="#f0f0f0" stroke-width="1"/>';
       svg+='<text x="'+(PL-6)+'" y="'+(tk.y+4)+'" text-anchor="end" font-size="10" fill="#bbb">'+
         (tk.v>=1000?Math.round(tk.v/100)/10+'k':tk.v)+'</text>';
     });
-    svg+='<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111" stop-opacity="0.12"/><stop offset="100%" stop-color="#111" stop-opacity="0.01"/></linearGradient></defs>';
 
-    // 막대 그래프
     wPoints.forEach(function(p,i){
       var cx=xp(i),top=yp(p.v),barH=PT+gH-top;
       svg+='<rect x="'+(cx-bW/2)+'" y="'+top+'" width="'+bW+'" height="'+barH+'" rx="3" fill="#111" fill-opacity="0.85"/>';
-    });
-    // x축 레이블 (최대 6개)
-    var step=Math.ceil(wPoints.length/6);
-    wPoints.forEach(function(p,i){
-      if(i%step!==0&&i!==wPoints.length-1)return;
-      svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'</text>';
+      svg+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'</text>';
     });
     svg+='</svg>';
-    chartHtml+=svg;
+    // 스크롤 래퍼 (주단위만, 데이터 많을 때 가로 스크롤)
+    var scrollStyle=period==="week"&&svgW>W
+      ?'overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px'
+      :'';
+    chartHtml+='<div id="vol-scroll" style="'+scrollStyle+'">'+svg+'</div>';
 
     var totalVol=wPoints.reduce(function(s,p){return s+p.v;},0);
     var avgVol=Math.round(totalVol/wPoints.length);
