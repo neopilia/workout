@@ -542,15 +542,27 @@ function renderHistory(){
     });
   }
 
+  // 일별 → 주간(월~일) 집계
+  var weekMap={};
+  volPoints.forEach(function(pt){
+    var d=new Date(pt.ds);
+    var dow=(d.getDay()+6)%7;
+    var mon=new Date(d);
+    mon.setDate(d.getDate()-dow);
+    var wKey=mon.getFullYear()+"-"+pad(mon.getMonth()+1)+"-"+pad(mon.getDate());
+    if(!weekMap[wKey]){weekMap[wKey]={v:0,label:(mon.getMonth()+1)+"/"+mon.getDate()};}
+    weekMap[wKey].v+=pt.v;
+  });
+  var wPoints=Object.keys(weekMap).sort().map(function(k){return {d:weekMap[k].label,v:weekMap[k].v};});
+
   var chartHtml='<div class="card" style="margin-bottom:10px"><div style="padding:16px">';
-  chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
+  chartHtml+='<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:12px">주간 볼륨 추이<span style="font-size:12px;font-weight:500;color:#aaa;margin-left:6px">'+(selEx?selEx:"전체")+'</span></div>';
   chartHtml+=dropHtml;
 
   var W=328,H=140,PL=44,PR=12,PT=12,PB=28;
   var gW=W-PL-PR,gH=H-PT-PB;
 
-  if(volPoints.length===0){
-    // 빈 그래프
+  if(wPoints.length===0){
     var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible" xmlns="http://www.w3.org/2000/svg">';
     for(var t=0;t<3;t++){
       var ty=PT+gH-t/2*gH;
@@ -561,15 +573,16 @@ function renderHistory(){
     svg+='</svg>';
     chartHtml+=svg;
     chartHtml+='<div style="display:flex;gap:0;margin-top:14px;border-top:0.5px solid #f5f5f5;padding-top:14px">';
-    [["—","운동일"],["—","평균 볼륨"],["—","최고 볼륨"]].forEach(function(s){
+    [["—","기록 주수"],["—","평균 주간볼륨"],["—","최고 주간볼륨"]].forEach(function(s){
       chartHtml+='<div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#ddd">'+s[0]+'</div><div style="font-size:11px;color:#aaa;font-weight:500;margin-top:2px">'+s[1]+'</div></div>';
     });
     chartHtml+='</div>';
   } else {
-    var maxV=Math.max.apply(null,volPoints.map(function(p){return p.v;}));
-    var minV=volPoints.length>1?Math.min.apply(null,volPoints.map(function(p){return p.v;})):0;
+    var maxV=Math.max.apply(null,wPoints.map(function(p){return p.v;}));
+    var minV=wPoints.length>1?Math.min.apply(null,wPoints.map(function(p){return p.v;})):0;
     var vRange=maxV-minV||1;
-    function xp(i){return PL+(volPoints.length>1?i/(volPoints.length-1):0.5)*gW;}
+    var bW=Math.max(4,Math.min(32,gW/wPoints.length*0.6));
+    function xp(i){return PL+(wPoints.length>1?i/(wPoints.length-1):0.5)*gW;}
     function yp(v){return PT+gH-(v-minV)/vRange*gH;}
 
     var yTicks=[];
@@ -584,40 +597,27 @@ function renderHistory(){
       svg+='<text x="'+(PL-6)+'" y="'+(tk.y+4)+'" text-anchor="end" font-size="10" fill="#bbb">'+
         (tk.v>=1000?Math.round(tk.v/100)/10+'k':tk.v)+'</text>';
     });
-    svg+='<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111" stop-opacity="0.10"/><stop offset="100%" stop-color="#111" stop-opacity="0.01"/></linearGradient></defs>';
+    svg+='<defs><linearGradient id="vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111" stop-opacity="0.12"/><stop offset="100%" stop-color="#111" stop-opacity="0.01"/></linearGradient></defs>';
 
-    if(volPoints.length===1){
-      // 점 하나만 표시
-      var cx=xp(0),cy=yp(volPoints[0].v);
-      svg+='<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+volPoints[0].d+'</text>';
-      svg+='<circle cx="'+cx+'" cy="'+cy+'" r="3.5" fill="#111" stroke="#fff" stroke-width="1.5"/>';
-    } else {
-      var aPath="M"+xp(0)+","+yp(volPoints[0].v);
-      for(var i=1;i<volPoints.length;i++){
-        var x0=xp(i-1),y0=yp(volPoints[i-1].v),x1=xp(i),y1=yp(volPoints[i].v);
-        var cx2=(x0+x1)/2;
-        aPath+=" C"+cx2+","+y0+" "+cx2+","+y1+" "+x1+","+y1;
-      }
-      var fillPath=aPath+" L"+xp(volPoints.length-1)+","+(PT+gH)+" L"+xp(0)+","+(PT+gH)+" Z";
-      svg+='<path d="'+fillPath+'" fill="url(#vg)"/>';
-      svg+='<path d="'+aPath+'" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-      var step=Math.ceil(volPoints.length/6);
-      volPoints.forEach(function(p,i){
-        if(i%step!==0&&i!==volPoints.length-1)return;
-        svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'</text>';
-      });
-      volPoints.forEach(function(p,i){
-        svg+='<circle cx="'+xp(i)+'" cy="'+yp(p.v)+'" r="3.5" fill="#111" stroke="#fff" stroke-width="1.5"/>';
-      });
-    }
+    // 막대 그래프
+    wPoints.forEach(function(p,i){
+      var cx=xp(i),top=yp(p.v),barH=PT+gH-top;
+      svg+='<rect x="'+(cx-bW/2)+'" y="'+top+'" width="'+bW+'" height="'+barH+'" rx="3" fill="#111" fill-opacity="0.85"/>';
+    });
+    // x축 레이블 (최대 6개)
+    var step=Math.ceil(wPoints.length/6);
+    wPoints.forEach(function(p,i){
+      if(i%step!==0&&i!==wPoints.length-1)return;
+      svg+='<text x="'+xp(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="10" fill="#bbb">'+p.d+'</text>';
+    });
     svg+='</svg>';
     chartHtml+=svg;
 
-    var totalVol=volPoints.reduce(function(s,p){return s+p.v;},0);
-    var avgVol=Math.round(totalVol/volPoints.length);
-    var maxPt=volPoints.reduce(function(a,b){return a.v>b.v?a:b;});
+    var totalVol=wPoints.reduce(function(s,p){return s+p.v;},0);
+    var avgVol=Math.round(totalVol/wPoints.length);
+    var maxPt=wPoints.reduce(function(a,b){return a.v>b.v?a:b;});
     chartHtml+='<div style="display:flex;gap:0;margin-top:14px;border-top:0.5px solid #f5f5f5;padding-top:14px">';
-    [[volPoints.length+"회","운동일"],[avgVol>=1000?(Math.round(avgVol/100)/10)+"k":avgVol,"평균 볼륨"],[maxPt.v>=1000?(Math.round(maxPt.v/100)/10)+"k":maxPt.v,"최고 볼륨"]].forEach(function(s){
+    [[wPoints.length+"주","기록 주수"],[avgVol>=1000?(Math.round(avgVol/100)/10)+"k":avgVol,"평균 주간볼륨"],[maxPt.v>=1000?(Math.round(maxPt.v/100)/10)+"k":maxPt.v,"최고 주간볼륨"]].forEach(function(s){
       chartHtml+='<div style="flex:1;text-align:center"><div style="font-size:18px;font-weight:800;color:#111">'+s[0]+'</div><div style="font-size:11px;color:#aaa;font-weight:500;margin-top:2px">'+s[1]+'</div></div>';
     });
     chartHtml+='</div>';
