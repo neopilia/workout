@@ -238,6 +238,8 @@ function loadR(){
   }catch(e){return{};}
 }function saveR(r){try{localStorage.setItem(RK,JSON.stringify(r));}catch(e){}}
 function saveL(l){try{localStorage.setItem(LK,JSON.stringify(l));}catch(e){}}
+function saveRC(c){try{localStorage.setItem("workout_routine_changes_v1",JSON.stringify(c));}catch(e){}}
+function loadRC(){try{var s=localStorage.getItem("workout_routine_changes_v1");return s?JSON.parse(s):[];}catch(e){return[];}}
 function todayKr(){return DAYS[new Date().getDay()===0?6:new Date().getDay()-1];}
 function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function pad(n){return n<10?"0"+n:String(n);}
@@ -293,7 +295,7 @@ var state={
   historySelectedEx:null,historyMonth:null,historyPeriod:"week",
   githubPat:localStorage.getItem("github_pat")||"",
   githubAutoBackup:localStorage.getItem("github_auto_backup")!=="false",
-  routineChanges:[]
+  routineChanges:loadRC()
 };
 
 function initLogState(){
@@ -905,7 +907,9 @@ function handleAction(el,e){
       });
       if(changed)saveR(state.routine);
     }
-    state.logRoutineSync=null;state.logSaved=true;render();
+    state.logRoutineSync=null;state.logSaved=true;
+    state.routineChanges=[];saveRC([]);
+    render();
     showToast("오늘 운동이 저장되었습니다");
     if(state.githubPat&&state.githubAutoBackup)githubBackup(false);
     return;
@@ -1011,6 +1015,7 @@ async function fetchSuggestedRoutine(){
     var keys=Object.keys(newR);
     if(!keys.length||!newR[keys[0]].exercises)return;
     state.routineChanges=diffRoutines(state.routine,newR);
+    saveRC(state.routineChanges);
     state.routine=newR;
     saveR(state.routine);
     render();
