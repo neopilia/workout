@@ -477,22 +477,17 @@ function renderHistory(){
     var dStr=year+"-"+pad(month+1)+"-"+pad(d);
     var log=state.logs[dStr];
     var isToday=dStr===todayStr();
-    // 3가지 상태: 운동 / 휴식 / 미입력
-    var bg=log?(log.rested?"#d1d1d6":"#1c1c1e"):"#ffffff";
-    var fg=log?(log.rested?"#6e6e73":"#ffffff"):"#aeaeb2";
+    var worked=log&&!log.rested;
+    var bg=worked?"#1c1c1e":"#ffffff";
+    var fg=worked?"#ffffff":"#aeaeb2";
     var border=isToday?"2px solid #111":"2px solid transparent";
-    var extra=log?'data-action="open-history-sheet" data-date="'+dStr+'"':'';
+    var extra=worked?'data-action="open-history-sheet" data-date="'+dStr+'"':'';
     heatHtml+='<div style="position:relative;width:100%;padding-bottom:100%">'+
       '<div '+extra+' style="position:absolute;inset:0;border-radius:8px;background:'+bg+
       ';border:'+border+';display:flex;align-items:center;justify-content:center;'+
       'font-size:12px;font-weight:600;color:'+fg+
       ';cursor:'+(log?"pointer":"default")+'">'+d+'</div></div>';
   }
-  heatHtml+='</div>';
-  heatHtml+='<div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap">';
-  [["#1c1c1e","#fff","운동"],["#d1d1d6","#6e6e73","휴식"],["#ffffff","#aeaeb2","미입력"]].forEach(function(c){
-    heatHtml+='<div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;border-radius:4px;background:'+c[0]+';border:'+( c[0]==="#ffffff"?"1.5px solid #d1d1d6":"none")+';"></div><span style="font-size:12px;font-weight:600;color:#555">'+c[2]+'</span></div>';
-  });
   heatHtml+='</div></div></div>';
 
   var volPoints=[];
@@ -767,12 +762,9 @@ function renderSheet(){
         '<div><div style="font-size:20px;font-weight:800;color:#111;letter-spacing:-0.3px">'+s.date.substring(5).replace('-','/')+' <span style="font-size:16px;font-weight:500;color:#888">'+log.day+'</span></div>'+
         (vol?'<div style="font-size:13px;color:#aaa;margin-top:3px;font-weight:500">볼륨 '+(vol>=1000?(Math.round(vol/100)/10)+'k':vol)+'</div>':'')+
         '</div>'+
-        (log.rested?'<span style="font-size:12px;padding:5px 12px;border-radius:99px;background:#f2f2f7;color:#aaa;font-weight:600">휴식</span>':'')+
         '</div>';
       var body='';
-      if(log.rested){
-        body='<div style="text-align:center;padding:24px 0;color:#bbb;font-size:15px">휴식일</div>';
-      } else {
+      {
         body=(log.exercises||[]).map(function(ex){
           var chips=ex.sets.length===0?'<span style="font-size:13px;color:#bbb">자유</span>':
             ex.sets.map(function(s){return '<span class="chip-label">'+fmtSet(s)+'</span>';}).join('');
