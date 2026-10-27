@@ -1040,14 +1040,19 @@ async function fetchSuggestedRoutine(){
     delete newR._suggestions;
     var keys=Object.keys(newR);
     if(!keys.length||!newR[keys[0]].exercises)return;
-    state.routineChanges=diffRoutines(state.routine,newR,reasons);
-    saveRC(state.routineChanges);
-    state.routineSuggestions=suggestions;
-    saveRS(suggestions);
-    state.routine=newR;
-    saveR(state.routine);
-    render();
-    showToast("새 루틴이 업데이트되었습니다 ✓");
+    var newHash=JSON.stringify(newR)+JSON.stringify(suggestions);
+    var lastHash=localStorage.getItem("last_suggestion_hash")||"";
+    if(newHash!==lastHash){
+      state.routineChanges=diffRoutines(state.routine,newR,reasons);
+      saveRC(state.routineChanges);
+      state.routineSuggestions=suggestions;
+      saveRS(suggestions);
+      state.routine=newR;
+      saveR(state.routine);
+      localStorage.setItem("last_suggestion_hash",newHash);
+      render();
+      showToast("새 루틴이 업데이트되었습니다 ✓");
+    }
   }catch(e){}
 }
 
