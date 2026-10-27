@@ -596,8 +596,8 @@ function renderHistory(){
     chartHtml+='</div>';
   } else {
     var maxV=Math.max.apply(null,wPoints.map(function(p){return p.v;}));
-    var minV=wPoints.length>1?Math.min.apply(null,wPoints.map(function(p){return p.v;})):0;
-    var vRange=maxV-minV||1;
+    var minV=0;
+    var vRange=maxV||1;
     // 막대 간격 고정: 주단위 32px, 월/연단위는 뷰포트 맞춤
     var colW=period==="week"?32:(period==="month"?Math.max(32,gW/wPoints.length):Math.max(48,gW/wPoints.length));
     var svgW=Math.max(W,PL+colW*wPoints.length+PR);
