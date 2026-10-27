@@ -1376,6 +1376,21 @@ function exportRoutine(){
   if(w){w.document.write('<pre style="font-family:monospace;padding:20px;white-space:pre-wrap">'+text+'</pre>');w.document.close();}
 }
 
+async function fetchSuggestedRoutine(){
+  try{
+    var url="https://raw.githubusercontent.com/neopilia/workout/main/data/suggested_routine.json?t="+Date.now();
+    var res=await fetch(url);
+    if(!res.ok)return;
+    var newR=JSON.parse(await res.text());
+    var keys=Object.keys(newR);
+    if(!keys.length||!newR[keys[0]].exercises)return;
+    state.routine=newR;
+    saveR(state.routine);
+    render();
+    showToast("새 루틴이 업데이트되었습니다 ✓");
+  }catch(e){}
+}
+
 function toggleAutoBackup(){
   var el=document.getElementById("github-auto-toggle");
   state.githubAutoBackup=el?el.checked:!state.githubAutoBackup;
@@ -1509,6 +1524,7 @@ function initDragSort(){
   render();
   initEvents();
   initDragSort();
+  fetchSuggestedRoutine();
 })();
 </script>
 </body>
