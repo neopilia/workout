@@ -397,9 +397,12 @@ function renderLog(){
     var selChanges=state.routineChanges.filter(function(c){return c.type===sel;});
     if(selChanges.length){
       var rows=selChanges.map(function(c){
-        return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:0.5px solid #eceeff">'+
+        return '<div style="padding:8px 0;border-bottom:0.5px solid #eceeff">'+
+          '<div style="display:flex;gap:8px;align-items:center">'+
           '<span style="font-size:13px;font-weight:600;color:#333;flex:1">'+escHtml(c.name)+'</span>'+
-          '<span style="font-size:12px;color:#6366f1;font-weight:500">'+escHtml(c.msg)+'</span></div>';
+          '<span style="font-size:12px;color:#6366f1;font-weight:500">'+escHtml(c.msg)+'</span></div>'+
+          (c.reason?'<div style="font-size:11px;color:#9ca3af;margin-top:3px">'+escHtml(c.reason)+'</div>':'')+
+          '</div>';
       }).join("");
       aiBoxHtml='<div class="card" style="margin-bottom:10px;background:#f8f9ff;border:1.5px solid #c7d2fe">'+
         '<div style="padding:14px 16px">'+
@@ -908,7 +911,6 @@ function handleAction(el,e){
       if(changed)saveR(state.routine);
     }
     state.logRoutineSync=null;state.logSaved=true;
-    state.routineChanges=[];saveRC([]);
     render();
     showToast("오늘 운동이 저장되었습니다");
     if(state.githubPat&&state.githubAutoBackup)githubBackup(false);
@@ -978,14 +980,16 @@ function showToast(msg){
 }
 
 
-function diffRoutines(oldR,newR){
+function diffRoutines(oldR,newR,reasons){
+  reasons=reasons||{};
   var changes=[];
   Object.keys(newR).forEach(function(type){
     var oldExs=(oldR[type]&&oldR[type].exercises)||[];
     var newExs=(newR[type]&&newR[type].exercises)||[];
     newExs.forEach(function(newEx){
       var oldEx=oldExs.find(function(e){return e.name===newEx.name;});
-      if(!oldEx){changes.push({type:type,name:newEx.name,msg:"추가됨"});return;}
+      var reason=reasons[newEx.name]||"";
+      if(!oldEx){changes.push({type:type,name:newEx.name,msg:"추가됨",reason:reason});return;}
       var oSets=oldEx.sets||[],nSets=newEx.sets||[];
       if(!oSets.length||!nSets.length)return;
       var oLast=oSets[oSets.length-1],nLast=nSets[nSets.length-1];
@@ -993,13 +997,13 @@ function diffRoutines(oldR,newR){
       var mainUp=nFirst.w!=null&&oFirst.w!=null&&nFirst.w!==oFirst.w;
       var chalUp=nLast.w!=null&&oLast.w!=null&&nLast.w!==oLast.w&&nSets.length>1;
       if(mainUp&&chalUp){
-        changes.push({type:type,name:newEx.name,msg:"주력 "+oFirst.w+"→"+nFirst.w+"kg / 도전 "+oLast.w+"→"+nLast.w+"kg"});
+        changes.push({type:type,name:newEx.name,msg:"주력 "+oFirst.w+"→"+nFirst.w+"kg / 도전 "+oLast.w+"→"+nLast.w+"kg",reason:reason});
       } else if(chalUp){
-        changes.push({type:type,name:newEx.name,msg:"도전 세트 "+oLast.w+"→"+nLast.w+"kg"});
+        changes.push({type:type,name:newEx.name,msg:"도전 세트 "+oLast.w+"→"+nLast.w+"kg",reason:reason});
       } else if(mainUp){
-        changes.push({type:type,name:newEx.name,msg:"주력 세트 "+oFirst.w+"→"+nFirst.w+"kg"});
+        changes.push({type:type,name:newEx.name,msg:"주력 세트 "+oFirst.w+"→"+nFirst.w+"kg",reason:reason});
       } else if(nSets.length>oSets.length){
-        changes.push({type:type,name:newEx.name,msg:"도전 세트 추가 "+nLast.w+"kg×"+nLast.r});
+        changes.push({type:type,name:newEx.name,msg:"도전 세트 추가 "+nLast.w+"kg×"+nLast.r,reason:reason});
       }
     });
   });
@@ -1012,9 +1016,11 @@ async function fetchSuggestedRoutine(){
     var res=await fetch(url);
     if(!res.ok)return;
     var newR=JSON.parse(await res.text());
+    var reasons=newR._reasons||{};
+    delete newR._reasons;
     var keys=Object.keys(newR);
     if(!keys.length||!newR[keys[0]].exercises)return;
-    state.routineChanges=diffRoutines(state.routine,newR);
+    state.routineChanges=diffRoutines(state.routine,newR,reasons);
     saveRC(state.routineChanges);
     state.routine=newR;
     saveR(state.routine);
