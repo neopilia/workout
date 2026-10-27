@@ -1182,6 +1182,7 @@ function initDragSort(){
   app.addEventListener("touchcancel",endDrag);
 }
 
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/workout/sw.js').catch(function(){});}
 (function(){
   var s=initLogState();
   state.logSets=s.sets;
