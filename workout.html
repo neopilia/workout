@@ -658,25 +658,6 @@ function renderSettings(){
     '<div style="font-size:14px;color:#888;margin-bottom:16px;line-height:1.5">백업 파일로 기존 데이터를 복원합니다.</div>'+
     '<button class="btn-secondary" data-action="restore" style="margin:0;width:100%">백업 파일 불러오기</button>'+
     '<input type="file" id="restore-file" accept=".json,application/json,text/plain" style="display:none">'+
-    '</div><div style="height:0.5px;background:#f5f5f5"></div><div style="padding:20px 20px 20px">'+
-    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">AI 루틴 분석</div>'+
-    '<div style="font-size:13px;color:#888;margin-bottom:10px;line-height:1.5">운동 데이터를 AI에 전송해 개선된 루틴을 자동으로 받아 적용합니다.</div>'+
-    '<div style="margin-bottom:12px">'+
-    '<div style="font-size:12px;font-weight:600;color:#aaa;margin-bottom:6px">게이트웨이 URL</div>'+
-    '<div style="display:flex;gap:8px">'+
-    '<input id="gateway-url-input" type="url" value="'+escHtml(state.llmGatewayUrl)+'" placeholder="http://서버IP:4000" style="flex:1;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;font-family:inherit;background:#fff;color:#111;outline:none">'+
-    '<button data-action="save-gateway-url" style="padding:10px 14px;border-radius:10px;border:none;background:#f2f2f7;color:#555;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">저장</button>'+
-    '</div></div>'+
-    (state.aiAnalysisStatus==="loading"
-      ? '<button disabled style="margin:0 0 10px;width:100%;padding:14px;border-radius:12px;border:none;background:#f2f2f7;color:#aaa;font-size:15px;font-weight:700;cursor:default;font-family:inherit">분석 중… (30초~1분 소요)</button>'
-      : '<button data-action="ai-analysis" style="margin:0 0 10px;width:100%;padding:14px;border-radius:12px;border:none;background:#111;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">🤖 AI 분석</button>')+
-    '<div style="height:1px;background:#f0f0f0;margin:4px 0 14px"></div>'+
-    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px">수동 분석 (Claude)</div>'+
-    '<div style="font-size:13px;color:#888;margin-bottom:10px;line-height:1.5">① 분석 파일을 내보내 Claude에게 업로드하세요.</div>'+
-    '<button class="btn-primary" data-action="export-for-claude" style="margin:0 0 10px;width:100%">📤 분석 파일 내보내기</button>'+
-    '<div style="font-size:13px;color:#888;margin-bottom:10px;line-height:1.5">② Claude가 만들어준 루틴 파일을 불러와서 교체합니다.</div>'+
-    '<button class="btn-secondary" data-action="import-routine" style="margin:0;width:100%">📥 새 루틴 파일 불러오기</button>'+
-    '<input type="file" id="import-routine-file" accept=".json,application/json,text/plain" style="display:none">'+
     '</div></div>'+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px">사용 현황</div>'+
