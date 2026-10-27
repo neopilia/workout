@@ -294,7 +294,8 @@ var state={
   llmGatewayUrl:localStorage.getItem("llm_gateway_url")||"http://llm-gateway:4000",
   aiAnalysisStatus:null,
   githubPat:localStorage.getItem("github_pat")||"",
-  githubAutoBackup:localStorage.getItem("github_auto_backup")!=="false"
+  githubAutoBackup:localStorage.getItem("github_auto_backup")!=="false",
+  routineChanges:[]
 };
 
 function initLogState(){
@@ -367,6 +368,18 @@ function renderLog(){
     var active=sel===t;
     return '<button data-action="select-routine" data-routine="'+escHtml(t)+'" style="padding:8px 14px;border-radius:99px;border:1.5px solid '+(active?'#111':'#ddd')+';background:'+(active?'#111':'#fff')+';color:'+(active?'#fff':'#888')+';font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">'+escHtml(t)+(active?' ✓':'')+'</button>';
   }).join('');
+  var changesHtml="";
+  if(state.routineChanges&&state.routineChanges.length){
+    var rows=state.routineChanges.map(function(c){
+      return '<div style="display:flex;gap:8px;align-items:baseline;padding:5px 0;border-bottom:0.5px solid #f5f5f5">'+
+        '<span style="font-size:12px;font-weight:700;color:#555;min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(c.name)+'</span>'+
+        '<span style="font-size:12px;color:#888;text-align:right">'+escHtml(c.msg)+'</span></div>';
+    }).join("");
+    changesHtml='<div class="card" style="margin-bottom:10px;background:#f8f9ff;border:1px solid #e8eaff">'+
+      '<div style="padding:13px 16px">'+
+      '<div style="font-size:11px;font-weight:700;color:#6366f1;letter-spacing:0.5px;margin-bottom:8px">AI 루틴 업데이트</div>'+
+      rows+'</div></div>';
+  }
   var routineHtml='<div class="card" style="margin-bottom:10px"><div style="padding:14px 16px">'+
     '<div style="margin-bottom:10px"><span style="font-size:12px;color:#aaa;font-weight:500">루틴 선택</span></div>'+
     '<div style="display:flex;gap:6px;flex-wrap:wrap">'+rBtns+'</div></div></div>';
@@ -392,7 +405,7 @@ function renderLog(){
   exHtml+='<button class="btn-secondary" data-action="open-add-ex" data-day="__log__" style="margin-bottom:10px">+ 다른 운동 추가</button>';
   return '<div class="page-header"><div class="page-title">오늘</div>'+
     '<button class="settings-btn" data-action="go-settings"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="15" cy="12" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/><circle cx="9" cy="18" r="2" fill="#fff" stroke="#bbb" stroke-width="2"/></svg></button>'+
-    '</div>'+routineHtml+exHtml+
+    '</div>'+changesHtml+routineHtml+exHtml+
     (state.logSaved?'<div style="text-align:center;margin:4px 16px 0;padding:16px 0"><span class="saved-badge">저장됨 ✓</span></div>':'<button class="btn-primary" data-action="log-save">저장</button>')+
     '<div style="height:300px;background:#f2f2f7"></div>';
 }
@@ -1376,6 +1389,34 @@ function exportRoutine(){
   if(w){w.document.write('<pre style="font-family:monospace;padding:20px;white-space:pre-wrap">'+text+'</pre>');w.document.close();}
 }
 
+function diffRoutines(oldR,newR){
+  var changes=[];
+  Object.keys(newR).forEach(function(type){
+    var oldExs=(oldR[type]&&oldR[type].exercises)||[];
+    var newExs=(newR[type]&&newR[type].exercises)||[];
+    newExs.forEach(function(newEx){
+      var oldEx=oldExs.find(function(e){return e.name===newEx.name;});
+      if(!oldEx){changes.push({type:type,name:newEx.name,msg:"추가됨"});return;}
+      var oSets=oldEx.sets||[],nSets=newEx.sets||[];
+      if(!oSets.length||!nSets.length)return;
+      var oLast=oSets[oSets.length-1],nLast=nSets[nSets.length-1];
+      var oFirst=oSets[0],nFirst=nSets[0];
+      var mainUp=nFirst.w!=null&&oFirst.w!=null&&nFirst.w!==oFirst.w;
+      var chalUp=nLast.w!=null&&oLast.w!=null&&nLast.w!==oLast.w&&nSets.length>1;
+      if(mainUp&&chalUp){
+        changes.push({type:type,name:newEx.name,msg:"주력 "+oFirst.w+"→"+nFirst.w+"kg / 도전 "+oLast.w+"→"+nLast.w+"kg"});
+      } else if(chalUp){
+        changes.push({type:type,name:newEx.name,msg:"도전 세트 "+oLast.w+"→"+nLast.w+"kg"});
+      } else if(mainUp){
+        changes.push({type:type,name:newEx.name,msg:"주력 세트 "+oFirst.w+"→"+nFirst.w+"kg"});
+      } else if(nSets.length>oSets.length){
+        changes.push({type:type,name:newEx.name,msg:"도전 세트 추가 "+nLast.w+"kg×"+nLast.r});
+      }
+    });
+  });
+  return changes;
+}
+
 async function fetchSuggestedRoutine(){
   try{
     var url="https://raw.githubusercontent.com/neopilia/workout/main/data/suggested_routine.json?t="+Date.now();
@@ -1384,6 +1425,7 @@ async function fetchSuggestedRoutine(){
     var newR=JSON.parse(await res.text());
     var keys=Object.keys(newR);
     if(!keys.length||!newR[keys[0]].exercises)return;
+    state.routineChanges=diffRoutines(state.routine,newR);
     state.routine=newR;
     saveR(state.routine);
     render();
