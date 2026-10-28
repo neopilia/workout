@@ -10685,16 +10685,6 @@
           ]
         },
         {
-          "name": "런닝머신",
-          "sets": [
-            {
-              "incline": 9,
-              "speed": 5.5,
-              "min": 20
-            }
-          ]
-        },
-        {
           "name": "Leg press",
           "sets": [
             {
