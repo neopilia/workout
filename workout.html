@@ -183,6 +183,7 @@ var DEFAULT_ROUTINE={
   ]}
 };
 
+var userId=(new URLSearchParams(location.search).get("u")||"default").replace(/[^a-zA-Z0-9_-]/g,"");
 var _ks=userId==="default"?"":"_"+userId;
 var RK="workout_routine_v1"+_ks,LK="workout_logs_v1"+_ks;
 function migrateTreadmill(routine){
@@ -292,8 +293,8 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261030-3";
-var userId=(new URLSearchParams(location.search).get("u")||"default").replace(/[^a-zA-Z0-9_-]/g,"");
+var APP_BUILD="20261030-4";
+
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
   routineOpenDay:null,historyOpen:null,
