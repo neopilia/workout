@@ -264,9 +264,15 @@ function toDisplayW(kg){
 function unitLabel(){
   return (state&&state.profile&&state.profile.unit==="lbs")?"lbs":"kg";
 }
+function isLbs(){return state&&state.profile&&state.profile.unit==="lbs";}
+function fmtSpeed(kmh){
+  if(isLbs())return Math.round(kmh*0.621371*2)/2;
+  return kmh;
+}
+function speedLabel(){return isLbs()?"mph":"km/h";}
 function fmtSet(s){
   if(s.incline!=null||s.speed!=null){
-    return (s.incline||0)+'%·'+(s.speed||0)+'km·'+(s.min||0)+'분';
+    return (s.incline||0)+'%·'+fmtSpeed(s.speed||0)+speedLabel()+'·'+(s.min||0)+'분';
   }
   if(s.min!=null&&s.min>0)return s.min+'분';
   return s.w===0?s.r+'회':fmtW(s.w)+'×'+s.r+'회';
@@ -308,7 +314,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261030-5";
+var APP_BUILD="20261030-6";
 
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -748,11 +754,12 @@ function renderSheet(){
         '<div class="stepper-val" id="'+pfx+'-incline">'+(set.incline||0)+'</div>'+
         '<button class="stepper-btn" data-action="step" data-field="incline" data-delta="0.5">+</button></div>'+
         '<span style="font-size:16px;color:#555;font-weight:500">%</span></div></div>';
+      var spDelta=isLbs()?0.8:0.5;
       inner+='<div class="sheet-row"><span class="sheet-label">속도</span><div style="display:flex;align-items:center;gap:8px">'+
-        '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="speed" data-delta="-0.5">−</button>'+
-        '<div class="stepper-val" id="'+pfx+'-speed">'+(set.speed||0)+'</div>'+
-        '<button class="stepper-btn" data-action="step" data-field="speed" data-delta="0.5">+</button></div>'+
-        '<span style="font-size:16px;color:#555;font-weight:500">km/h</span></div></div>';
+        '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="speed" data-delta="'+(-spDelta)+'">−</button>'+
+        '<div class="stepper-val" id="'+pfx+'-speed">'+fmtSpeed(set.speed||0)+'</div>'+
+        '<button class="stepper-btn" data-action="step" data-field="speed" data-delta="'+spDelta+'">+</button></div>'+
+        '<span style="font-size:16px;color:#555;font-weight:500">'+speedLabel()+'</span></div></div>';
       inner+='<div class="sheet-row"><span class="sheet-label">시간</span><div style="display:flex;align-items:center;gap:8px">'+
         '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="min" data-delta="-1">−</button>'+
         '<div class="stepper-val" id="'+pfx+'-min">'+(set.min||0)+'</div>'+
@@ -980,7 +987,7 @@ function handleAction(el,e){
     } else {
       state.logSaved=false;
     }
-    var valEl=document.getElementById((s2.src==="log"?"sv":"rv")+"-"+field);if(valEl)valEl.textContent=field==="w"?toDisplayW(set2[field]):set2[field];
+    var valEl=document.getElementById((s2.src==="log"?"sv":"rv")+"-"+field);if(valEl)valEl.textContent=field==="w"?toDisplayW(set2[field]):field==="speed"?fmtSpeed(set2[field]):set2[field];
     return;
   }
   if(a==="del-set"){
