@@ -249,12 +249,27 @@ function loadP(){try{var s=localStorage.getItem("workout_profile_v1"+_ks);return
 function todayKr(){return DAYS[new Date().getDay()===0?6:new Date().getDay()-1];}
 function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function pad(n){return n<10?"0"+n:String(n);}
+function fmtW(kg){
+  if(state&&state.profile&&state.profile.unit==="lbs"){
+    return Math.round(kg*2.20462*2)/2+" lbs";
+  }
+  return kg+" kg";
+}
+function toDisplayW(kg){
+  if(state&&state.profile&&state.profile.unit==="lbs"){
+    return Math.round(kg*2.20462*2)/2;
+  }
+  return kg;
+}
+function unitLabel(){
+  return (state&&state.profile&&state.profile.unit==="lbs")?"lbs":"kg";
+}
 function fmtSet(s){
   if(s.incline!=null||s.speed!=null){
     return (s.incline||0)+'%·'+(s.speed||0)+'km·'+(s.min||0)+'분';
   }
   if(s.min!=null&&s.min>0)return s.min+'분';
-  return s.w===0?s.r+'회':s.w+'kg×'+s.r+'회';
+  return s.w===0?s.r+'회':fmtW(s.w)+'×'+s.r+'회';
 }
 function dc(o){return JSON.parse(JSON.stringify(o));}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -293,7 +308,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261030-4";
+var APP_BUILD="20261030-5";
 
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -693,6 +708,11 @@ function renderSettings(){
     '</select></div>'+
     '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">키 (cm)</label><input id="pf-height" type="number" placeholder="예: 176" value="'+(p.height||'')+'" style="'+inStyle+';width:160px"></div>'+
     '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">몸무게 (kg)</label><input id="pf-weight" type="number" placeholder="예: 71" value="'+(p.weight||'')+'" style="'+inStyle+';width:160px"></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">단위</label>'+
+    '<select id="pf-unit" style="'+inStyle+';width:160px">'+
+    '<option value="kg"'+(p.unit==="lbs"?'':' selected')+'>kg</option>'+
+    '<option value="lbs"'+(p.unit==="lbs"?' selected':'')+'>lbs</option>'+
+    '</select></div>'+
     '<div style="display:flex;align-items:flex-start;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px;padding-top:10px">목표</label><textarea id="pf-goals" placeholder="예: 근력 강화, 탄탄한 몸" rows="2" style="'+inStyle+';width:160px;resize:none">'+(p.goals||'')+'</textarea></div>'+
     '</div>'+
     '<button data-action="save-profile" style="margin-top:14px;width:100%;padding:13px;border-radius:12px;background:#111;color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;-webkit-appearance:none">저장</button>'+
@@ -747,9 +767,9 @@ function renderSheet(){
     } else {
       if(set.w>0)inner+='<div class="sheet-row"><span class="sheet-label">중량</span><div style="display:flex;align-items:center;gap:8px">'+
         '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="w" data-delta="-2.5">−</button>'+
-        '<div class="stepper-val" id="'+pfx+'-w">'+set.w+'</div>'+
+        '<div class="stepper-val" id="'+pfx+'-w">'+toDisplayW(set.w)+'</div>'+
         '<button class="stepper-btn" data-action="step" data-field="w" data-delta="2.5">+</button></div>'+
-        '<span style="font-size:16px;color:#555;font-weight:500">kg</span></div></div>';
+        '<span style="font-size:16px;color:#555;font-weight:500">'+unitLabel()+'</span></div></div>';
       inner+='<div class="sheet-row"><span class="sheet-label">횟수</span><div style="display:flex;align-items:center;gap:8px">'+
         '<div class="stepper"><button class="stepper-btn" data-action="step" data-field="r" data-delta="-1">−</button>'+
         '<div class="stepper-val" id="'+pfx+'-r">'+set.r+'</div>'+
@@ -824,8 +844,9 @@ function handleAction(el,e){
     var pg=document.getElementById("pf-gender").value;
     var ph=parseFloat(document.getElementById("pf-height").value)||0;
     var pw=parseFloat(document.getElementById("pf-weight").value)||0;
+    var pu=document.getElementById("pf-unit").value||"kg";
     var pgls=(document.getElementById("pf-goals").value||"").trim();
-    state.profile={birthYear:by||undefined,gender:pg||undefined,height:ph||undefined,weight:pw||undefined,goals:pgls||undefined};
+    state.profile={birthYear:by||undefined,gender:pg||undefined,height:ph||undefined,weight:pw||undefined,unit:pu,goals:pgls||undefined};
     Object.keys(state.profile).forEach(function(k){if(state.profile[k]===undefined)delete state.profile[k];});
     saveP(state.profile);
     showToast("프로파일이 저장되었습니다 ✓");
@@ -959,7 +980,7 @@ function handleAction(el,e){
     } else {
       state.logSaved=false;
     }
-    var valEl=document.getElementById((s2.src==="log"?"sv":"rv")+"-"+field);if(valEl)valEl.textContent=set2[field];
+    var valEl=document.getElementById((s2.src==="log"?"sv":"rv")+"-"+field);if(valEl)valEl.textContent=field==="w"?toDisplayW(set2[field]):set2[field];
     return;
   }
   if(a==="del-set"){
@@ -1020,13 +1041,13 @@ function diffRoutines(oldR,newR,reasons){
       var mainUp=nFirst.w!=null&&oFirst.w!=null&&nFirst.w!==oFirst.w;
       var chalUp=nLast.w!=null&&oLast.w!=null&&nLast.w!==oLast.w&&nSets.length>1;
       if(mainUp&&chalUp){
-        changes.push({type:type,name:newEx.name,msg:"주력 "+oFirst.w+"→"+nFirst.w+"kg / 도전 "+oLast.w+"→"+nLast.w+"kg",reason:reason});
+        changes.push({type:type,name:newEx.name,msg:"주력 "+fmtW(oFirst.w)+"→"+fmtW(nFirst.w)+" / 도전 "+fmtW(oLast.w)+"→"+fmtW(nLast.w),reason:reason});
       } else if(chalUp){
-        changes.push({type:type,name:newEx.name,msg:"도전 세트 "+oLast.w+"→"+nLast.w+"kg",reason:reason});
+        changes.push({type:type,name:newEx.name,msg:"도전 세트 "+fmtW(oLast.w)+"→"+fmtW(nLast.w),reason:reason});
       } else if(mainUp){
-        changes.push({type:type,name:newEx.name,msg:"주력 세트 "+oFirst.w+"→"+nFirst.w+"kg",reason:reason});
+        changes.push({type:type,name:newEx.name,msg:"주력 세트 "+fmtW(oFirst.w)+"→"+fmtW(nFirst.w),reason:reason});
       } else if(nSets.length>oSets.length){
-        changes.push({type:type,name:newEx.name,msg:"도전 세트 추가 "+nLast.w+"kg×"+nLast.r,reason:reason});
+        changes.push({type:type,name:newEx.name,msg:"도전 세트 추가 "+fmtW(nLast.w)+"×"+nLast.r,reason:reason});
       }
     });
   });
