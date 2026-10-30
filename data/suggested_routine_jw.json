@@ -78,7 +78,7 @@
         "sets": [
           {
             "incline": 5,
-            "speed": 5.5,
+            "speed": 8,
             "min": 40
           }
         ]
@@ -155,7 +155,7 @@
         "sets": [
           {
             "incline": 5,
-            "speed": 5.5,
+            "speed": 8,
             "min": 40
           }
         ]
@@ -228,7 +228,7 @@
         "sets": [
           {
             "incline": 5,
-            "speed": 5.5,
+            "speed": 8,
             "min": 40
           }
         ]
@@ -242,7 +242,7 @@
         "sets": [
           {
             "incline": 5,
-            "speed": 5.5,
+            "speed": 8,
             "min": 40
           }
         ]
