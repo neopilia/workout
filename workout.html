@@ -243,6 +243,8 @@ function saveRC(c){try{localStorage.setItem("workout_routine_changes_v1"+_ks,JSO
 function loadRC(){try{var s=localStorage.getItem("workout_routine_changes_v1"+_ks);return s?JSON.parse(s):[];}catch(e){return[];}}
 function saveRS(s){try{localStorage.setItem("workout_routine_suggestions_v1"+_ks,JSON.stringify(s));}catch(e){}}
 function loadRS(){try{var s=localStorage.getItem("workout_routine_suggestions_v1"+_ks);return s?JSON.parse(s):[];}catch(e){return[];}}
+function saveP(p){try{localStorage.setItem("workout_profile_v1"+_ks,JSON.stringify(p));}catch(e){}}
+function loadP(){try{var s=localStorage.getItem("workout_profile_v1"+_ks);return s?JSON.parse(s):{};}catch(e){return{};}}
 function todayKr(){return DAYS[new Date().getDay()===0?6:new Date().getDay()-1];}
 function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function pad(n){return n<10?"0"+n:String(n);}
@@ -290,7 +292,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261030-2";
+var APP_BUILD="20261030-3";
 var userId=(new URLSearchParams(location.search).get("u")||"default").replace(/[^a-zA-Z0-9_-]/g,"");
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -300,7 +302,8 @@ var state={
   historySelectedEx:null,historyMonth:null,historyPeriod:"week",
   githubPat:localStorage.getItem("github_pat")||["github","pat","11ABWNW3Q06XRie0vk41rL","tqLeJiZ8NwmFyo4f3bTkpXWEtlNgCvEOvo3Qxf75ZRKVJQLG5ADruWWqRr8"].join("_"),
   routineChanges:loadRC(),
-  routineSuggestions:loadRS()
+  routineSuggestions:loadRS(),
+  profile:loadP()
 };
 
 function initLogState(){
@@ -675,7 +678,26 @@ function renderSettings(){
   var logCount=Object.keys(state.logs).length;
   var exCount=Object.keys(state.routine).reduce(function(n,d){return n+state.routine[d].exercises.length;},0);
 
+  var p=state.profile||{};
+  var inStyle='width:100%;padding:10px 12px;font-size:15px;border:none;border-radius:10px;background:#f2f2f7;font-family:inherit;color:#111;-webkit-appearance:none;appearance:none';
+  var profileCard='<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
+    '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px">프로파일</div>'+
+    '<div style="display:flex;flex-direction:column;gap:10px">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">출생연도</label><input id="pf-birthYear" type="number" placeholder="예: 1968" value="'+(p.birthYear||'')+'" style="'+inStyle+';width:160px"></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">성별</label>'+
+    '<select id="pf-gender" style="'+inStyle+';width:160px">'+
+    '<option value=""'+((!p.gender)?' selected':'')+'>선택</option>'+
+    '<option value="male"'+(p.gender==='male'?' selected':'')+'>남</option>'+
+    '<option value="female"'+(p.gender==='female'?' selected':'')+'>여</option>'+
+    '</select></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">키 (cm)</label><input id="pf-height" type="number" placeholder="예: 176" value="'+(p.height||'')+'" style="'+inStyle+';width:160px"></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px">몸무게 (kg)</label><input id="pf-weight" type="number" placeholder="예: 71" value="'+(p.weight||'')+'" style="'+inStyle+';width:160px"></div>'+
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between"><label style="font-size:15px;color:#555;min-width:72px;padding-top:10px">목표</label><textarea id="pf-goals" placeholder="예: 근력 강화, 탄탄한 몸" rows="2" style="'+inStyle+';width:160px;resize:none">'+(p.goals||'')+'</textarea></div>'+
+    '</div>'+
+    '<button data-action="save-profile" style="margin-top:14px;width:100%;padding:13px;border-radius:12px;background:#111;color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;-webkit-appearance:none">저장</button>'+
+    '</div></div>';
   return '<div class="page-header"><div class="page-title">설정</div><button class="settings-btn" data-action="settings-back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="18" x2="18" y2="18"/></svg></button></div>'+
+    profileCard+
     '<div class="card" style="margin-bottom:10px"><div style="padding:20px">'+
     '<div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px">사용 현황</div>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid #f5f5f5"><span style="font-size:15px;color:#555">운동 기록</span><span style="font-size:15px;font-weight:600;color:#111">'+logCount+'일</span></div>'+
@@ -796,6 +818,18 @@ function handleAction(el,e){
   if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();scrollTop();return;}
   if(a==="go-settings"){state.prevTab=state.tab;state.tab="settings";render();scrollTop();return;}
   if(a==="settings-back"){state.tab=state.prevTab||"log";render();scrollTop();return;}
+  if(a==="save-profile"){
+    var by=parseInt(document.getElementById("pf-birthYear").value)||0;
+    var pg=document.getElementById("pf-gender").value;
+    var ph=parseFloat(document.getElementById("pf-height").value)||0;
+    var pw=parseFloat(document.getElementById("pf-weight").value)||0;
+    var pgls=(document.getElementById("pf-goals").value||"").trim();
+    state.profile={birthYear:by||undefined,gender:pg||undefined,height:ph||undefined,weight:pw||undefined,goals:pgls||undefined};
+    Object.keys(state.profile).forEach(function(k){if(state.profile[k]===undefined)delete state.profile[k];});
+    saveP(state.profile);
+    showToast("프로파일이 저장되었습니다 ✓");
+    return;
+  }
   if(a==="toggle-routine"){state.routineOpenDay=state.routineOpenDay===el.dataset.day?null:el.dataset.day;render();return;}
   if(a==="toggle-history"){state.historyOpen=state.historyOpen===el.dataset.date?null:el.dataset.date;render();return;}
   if(a==="open-history-sheet"){state.sheet={type:"historyDetail",date:el.dataset.date};render();return;}
@@ -1036,7 +1070,7 @@ async function githubBackup(showSuccess){
   var pat=state.githubPat;
   if(!pat)return;
   var owner="neopilia",repo="workout",path=userId==="default"?"data/backup.json":"data/backup_"+userId+".json";
-  var data=JSON.stringify({version:"1.2",date:todayStr(),routine:state.routine,logs:state.logs},null,2);
+  var data=JSON.stringify({version:"1.2",date:todayStr(),routine:state.routine,logs:state.logs,profile:state.profile||{}},null,2);
   var content=btoa(unescape(encodeURIComponent(data)));
   try{
     var getRes=await fetch("https://api.github.com/repos/"+owner+"/"+repo+"/contents/"+path,{
@@ -1068,6 +1102,7 @@ async function githubAutoRestore(){
     if(!data.routine||!data.logs)return;
     state.routine=migrateRoutineFormat(migrateTreadmill(data.routine||{}));
     state.logs=data.logs||{};
+    if(data.profile&&typeof data.profile==="object"){state.profile=data.profile;saveP(state.profile);}
     saveR(state.routine);saveL(state.logs);
     var ls=initLogState();
     state.logSets=ls.sets;
