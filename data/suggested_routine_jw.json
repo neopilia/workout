@@ -77,7 +77,7 @@
         "name": "런닝머신",
         "sets": [
           {
-            "incline": 1,
+            "incline": 0,
             "speed": 8,
             "min": 40
           }
@@ -154,7 +154,7 @@
         "name": "런닝머신",
         "sets": [
           {
-            "incline": 1,
+            "incline": 0,
             "speed": 8,
             "min": 40
           }
@@ -227,7 +227,7 @@
         "name": "런닝머신",
         "sets": [
           {
-            "incline": 1,
+            "incline": 0,
             "speed": 8,
             "min": 40
           }
@@ -241,7 +241,7 @@
         "name": "런닝머신",
         "sets": [
           {
-            "incline": 1,
+            "incline": 0,
             "speed": 8,
             "min": 40
           }
