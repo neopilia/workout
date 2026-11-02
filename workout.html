@@ -240,6 +240,7 @@ function loadR(){
   }catch(e){return{};}
 }
 var _routineSaveTimer=null;
+var _RPK="routine_github_pushed_hash"+_ks;
 async function saveRoutineToGithub(){
   if(!state||!state.githubPat)return;
   var path=userId==="default"?"data/routine.json":"data/routine_"+userId+".json";
@@ -249,11 +250,12 @@ async function saveRoutineToGithub(){
       headers:{"Authorization":"token "+state.githubPat,"Accept":"application/vnd.github+json"}
     });
     var sha=getRes.ok?(await getRes.json()).sha:undefined;
-    await fetch("https://api.github.com/repos/neopilia/workout/contents/"+path,{
+    var putRes=await fetch("https://api.github.com/repos/neopilia/workout/contents/"+path,{
       method:"PUT",
       headers:{"Authorization":"token "+state.githubPat,"Content-Type":"application/json","Accept":"application/vnd.github+json"},
       body:JSON.stringify({message:"routine update "+todayStr(),content:btoa(unescape(encodeURIComponent(content))),sha:sha})
     });
+    if(putRes.ok)try{localStorage.setItem(_RPK,JSON.stringify(state.routine));}catch(e){}
   }catch(e){}
 }
 function saveR(r){try{localStorage.setItem(RK,JSON.stringify(r));}catch(e){}clearTimeout(_routineSaveTimer);_routineSaveTimer=setTimeout(saveRoutineToGithub,3000);}
@@ -332,7 +334,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261102-3";
+var APP_BUILD="20261102-4";
 
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -1160,8 +1162,11 @@ async function fetchRoutineFromGithub(){
     var res=await fetch(url+Date.now());
     if(!res.ok&&userId!=="default")res=await fetch(baseUrl+"data/routine.json?t="+Date.now());
     if(!res.ok){
-      if(Object.keys(state.routine).length>0)return;
-      // 폴백: suggested_routine (신규 사용자)
+      if(Object.keys(state.routine).length>0){
+        // GitHub에 없고 로컬엔 있음 → 로컬을 GitHub에 push
+        saveRoutineToGithub();return;
+      }
+      // 신규 사용자 폴백: suggested_routine
       var su=userId==="default"?baseUrl+"data/suggested_routine.json?t=":baseUrl+"data/suggested_routine_"+userId+".json?t=";
       res=await fetch(su+Date.now());
       if(!res.ok)return;
@@ -1172,12 +1177,22 @@ async function fetchRoutineFromGithub(){
     var cleanR={};keys.forEach(function(k){cleanR[k]=d[k];});
     var ghHash=JSON.stringify(cleanR);
     var localHash=JSON.stringify(state.routine);
-    if(ghHash===localHash)return; // 동일하면 skip
+    if(ghHash===localHash){
+      // 동일 — pushed hash도 동기화
+      try{localStorage.setItem(_RPK,localHash);}catch(e){}
+      return;
+    }
+    var lastPushedHash=localStorage.getItem(_RPK)||"";
+    var localAhead=localHash!==lastPushedHash&&Object.keys(state.routine).length>0;
+    if(localAhead){
+      // 로컬에 미push 변경이 있음 → GitHub에 올림, 덮어쓰지 않음
+      saveRoutineToGithub();return;
+    }
+    // GitHub가 최신 → 로컬 갱신
     state.routine=migrateRoutineFormat(migrateTreadmill(cleanR));
-    // saveR 호출 시 GitHub에 다시 push되는 루프 방지: localStorage만 갱신
-    try{localStorage.setItem(RK,JSON.stringify(state.routine));}catch(e){}
+    try{localStorage.setItem(RK,JSON.stringify(state.routine));localStorage.setItem(_RPK,ghHash);}catch(e){}
     render();
-    if(Object.keys(state.routine).length>0)showToast("루틴이 동기화됐습니다 ✓");
+    showToast("루틴이 동기화됐습니다 ✓");
   }catch(e){}
 }
 
