@@ -314,7 +314,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261030-6";
+var APP_BUILD="20261102-1";
 
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -1081,14 +1081,26 @@ async function fetchSuggestedRoutine(){
     if(!keys.length||!newR[keys[0]].exercises)return;
     var newHash=JSON.stringify(newR)+JSON.stringify(suggestions);
     var lastHash=localStorage.getItem("last_suggestion_hash"+_ks)||"";
-    if(newHash!==lastHash){
-      state.routineChanges=diffRoutines(state.routine,newR,reasons);
-      saveRC(state.routineChanges);
-      state.routineSuggestions=suggestions;
-      saveRS(suggestions);
+    if(newHash===lastHash)return;
+    state.routineChanges=diffRoutines(state.routine,newR,reasons);
+    saveRC(state.routineChanges);
+    state.routineSuggestions=suggestions;
+    saveRS(suggestions);
+    // 사용자가 마지막 제안 적용 이후 직접 수정했으면 덮어쓰지 않고 알림만
+    var lastAppliedRoutineHash=localStorage.getItem("last_applied_routine_hash"+_ks)||"";
+    var currentRoutineHash=JSON.stringify(state.routine);
+    var userModified=lastAppliedRoutineHash&&currentRoutineHash!==lastAppliedRoutineHash;
+    if(userModified){
+      localStorage.setItem("last_suggestion_hash"+_ks,newHash);
+      localStorage.setItem("pending_routine_json"+_ks,JSON.stringify(newR));
+      render();
+      showToast("AI 루틴 제안이 있습니다. 루틴 탭에서 확인하세요.");
+    }else{
       state.routine=newR;
       saveR(state.routine);
       localStorage.setItem("last_suggestion_hash"+_ks,newHash);
+      localStorage.setItem("last_applied_routine_hash"+_ks,JSON.stringify(newR));
+      localStorage.removeItem("pending_routine_json"+_ks);
       render();
       showToast("새 루틴이 업데이트되었습니다 ✓");
     }
