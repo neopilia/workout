@@ -238,7 +238,25 @@ function loadR(){
     });
     return logs;
   }catch(e){return{};}
-}function saveR(r){try{localStorage.setItem(RK,JSON.stringify(r));}catch(e){}}
+}
+var _routineSaveTimer=null;
+async function saveRoutineToGithub(){
+  if(!state||!state.githubPat)return;
+  var path=userId==="default"?"data/routine.json":"data/routine_"+userId+".json";
+  try{
+    var content=JSON.stringify(state.routine,null,2);
+    var getRes=await fetch("https://api.github.com/repos/neopilia/workout/contents/"+path,{
+      headers:{"Authorization":"token "+state.githubPat,"Accept":"application/vnd.github+json"}
+    });
+    var sha=getRes.ok?(await getRes.json()).sha:undefined;
+    await fetch("https://api.github.com/repos/neopilia/workout/contents/"+path,{
+      method:"PUT",
+      headers:{"Authorization":"token "+state.githubPat,"Content-Type":"application/json","Accept":"application/vnd.github+json"},
+      body:JSON.stringify({message:"routine update "+todayStr(),content:btoa(unescape(encodeURIComponent(content))),sha:sha})
+    });
+  }catch(e){}
+}
+function saveR(r){try{localStorage.setItem(RK,JSON.stringify(r));}catch(e){}clearTimeout(_routineSaveTimer);_routineSaveTimer=setTimeout(saveRoutineToGithub,3000);}
 function saveL(l){try{localStorage.setItem(LK,JSON.stringify(l));}catch(e){}}
 function saveRC(c){try{localStorage.setItem("workout_routine_changes_v1"+_ks,JSON.stringify(c));}catch(e){}}
 function loadRC(){try{var s=localStorage.getItem("workout_routine_changes_v1"+_ks);return s?JSON.parse(s):[];}catch(e){return[];}}
@@ -314,7 +332,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261102-1";
+var APP_BUILD="20261102-2";
 
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -451,9 +469,13 @@ function renderLog(){
       if(selChanges.length)innerHtml+='<div style="height:1px;background:#e8e8f0;margin:10px 0"></div>';
       innerHtml+='<div style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:0.5px;margin-bottom:8px">운동 추가 제안</div>'+sugRows;
     }
+    var hasPending=!!localStorage.getItem("pending_routine_json"+_ks);
     aiBoxHtml='<div class="card" style="margin-bottom:10px;background:#f8f9ff;border:1.5px solid #c7d2fe">'+
       '<div style="padding:14px 16px">'+
-      '<div style="font-size:11px;font-weight:700;color:#6366f1;letter-spacing:0.5px;margin-bottom:10px">✦ AI 루틴 제안</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<div style="font-size:11px;font-weight:700;color:#6366f1;letter-spacing:0.5px">✦ AI 루틴 제안</div>'+
+      (hasPending?'<button data-action="accept-suggestion" style="font-size:12px;font-weight:700;color:#fff;background:#6366f1;border:none;border-radius:8px;padding:5px 12px;cursor:pointer">수락</button>':'')+
+      '</div>'+
       innerHtml+'</div></div>';
   }
   var userBadge=userId!=="default"?'<span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:#f2f2f7;color:#555;margin-right:6px">'+userId+'</span>':'';
@@ -844,6 +866,7 @@ function syncExerciseAcrossDays(srcDay, exName, newSets){
 function handleAction(el,e){
   var a=el.dataset.action;
   if(a==="go-log"){state.tab="log";state.logRoutineSync=null;render();scrollTop();return;}
+  if(a==="accept-suggestion"){acceptSuggestedRoutine();return;}
   if(a==="go-settings"){state.prevTab=state.tab;state.tab="settings";render();scrollTop();return;}
   if(a==="settings-back"){state.tab=state.prevTab||"log";render();scrollTop();return;}
   if(a==="save-profile"){
@@ -1082,29 +1105,29 @@ async function fetchSuggestedRoutine(){
     var newHash=JSON.stringify(newR)+JSON.stringify(suggestions);
     var lastHash=localStorage.getItem("last_suggestion_hash"+_ks)||"";
     if(newHash===lastHash)return;
+    // 자동 적용 없음 — 사용자가 명시적으로 수락할 때만 적용
     state.routineChanges=diffRoutines(state.routine,newR,reasons);
     saveRC(state.routineChanges);
     state.routineSuggestions=suggestions;
     saveRS(suggestions);
-    // 사용자가 마지막 제안 적용 이후 직접 수정했으면 덮어쓰지 않고 알림만
-    var lastAppliedRoutineHash=localStorage.getItem("last_applied_routine_hash"+_ks)||"";
-    var currentRoutineHash=JSON.stringify(state.routine);
-    var userModified=lastAppliedRoutineHash&&currentRoutineHash!==lastAppliedRoutineHash;
-    if(userModified){
-      localStorage.setItem("last_suggestion_hash"+_ks,newHash);
-      localStorage.setItem("pending_routine_json"+_ks,JSON.stringify(newR));
-      render();
-      showToast("AI 루틴 제안이 있습니다. 루틴 탭에서 확인하세요.");
-    }else{
-      state.routine=newR;
-      saveR(state.routine);
-      localStorage.setItem("last_suggestion_hash"+_ks,newHash);
-      localStorage.setItem("last_applied_routine_hash"+_ks,JSON.stringify(newR));
-      localStorage.removeItem("pending_routine_json"+_ks);
-      render();
-      showToast("새 루틴이 업데이트되었습니다 ✓");
-    }
+    localStorage.setItem("last_suggestion_hash"+_ks,newHash);
+    localStorage.setItem("pending_routine_json"+_ks,JSON.stringify(newR));
+    render();
+    showToast("AI 루틴 제안이 있습니다. 루틴 탭에서 확인하세요.");
   }catch(e){}
+}
+
+function acceptSuggestedRoutine(){
+  var pendingJson=localStorage.getItem("pending_routine_json"+_ks);
+  if(!pendingJson)return;
+  var newR=JSON.parse(pendingJson);
+  state.routine=newR;
+  saveR(state.routine);
+  state.routineChanges=[];
+  saveRC([]);
+  localStorage.removeItem("pending_routine_json"+_ks);
+  render();
+  showToast("AI 제안 루틴이 적용됐습니다 ✓");
 }
 
 async function githubBackup(showSuccess){
@@ -1130,6 +1153,30 @@ async function githubBackup(showSuccess){
   }
 }
 
+async function fetchRoutineFromGithub(){
+  if(Object.keys(state.routine).length>0)return;
+  var baseUrl="https://raw.githubusercontent.com/neopilia/workout/main/";
+  var url=userId==="default"?baseUrl+"data/routine.json?t=":baseUrl+"data/routine_"+userId+".json?t=";
+  try{
+    var res=await fetch(url+Date.now());
+    if(!res.ok&&userId!=="default")res=await fetch(baseUrl+"data/routine.json?t="+Date.now());
+    if(!res.ok){
+      // 최종 폴백: suggested_routine
+      var su=userId==="default"?baseUrl+"data/suggested_routine.json?t=":baseUrl+"data/suggested_routine_"+userId+".json?t=";
+      res=await fetch(su+Date.now());
+      if(!res.ok)return;
+    }
+    var d=JSON.parse(await res.text());
+    var keys=Object.keys(d).filter(function(k){return!k.startsWith("_");});
+    if(!keys.length)return;
+    var cleanR={};keys.forEach(function(k){cleanR[k]=d[k];});
+    state.routine=migrateRoutineFormat(migrateTreadmill(cleanR));
+    saveR(state.routine);
+    render();
+    showToast("루틴을 불러왔습니다 ✓");
+  }catch(e){}
+}
+
 async function githubAutoRestore(){
   if(!state.githubPat||Object.keys(state.logs).length>0)return;
   try{
@@ -1140,16 +1187,16 @@ async function githubAutoRestore(){
     if(!res.ok)return;
     var info=await res.json();
     var data=JSON.parse(decodeURIComponent(escape(atob(info.content.replace(/\n/g,"")))));
-    if(!data.routine||!data.logs)return;
-    state.routine=migrateRoutineFormat(migrateTreadmill(data.routine||{}));
+    if(!data.logs)return;
+    // 루틴은 복원하지 않음 — routine_{userId}.json이 루틴의 단일 출처
     state.logs=data.logs||{};
     if(data.profile&&typeof data.profile==="object"){state.profile=data.profile;saveP(state.profile);}
-    saveR(state.routine);saveL(state.logs);
+    saveL(state.logs);
     var ls=initLogState();
     state.logSets=ls.sets;
     state.logSaved=!!state.logs[todayStr()];
     render();
-    showToast("GitHub에서 데이터를 복원했습니다 ✓");
+    showToast("GitHub에서 기록을 복원했습니다 ✓");
   }catch(e){}
 }
 
@@ -1216,6 +1263,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('/workout/sw.j
   render();
   initEvents();
   initDragSort();
+  fetchRoutineFromGithub();
   fetchSuggestedRoutine();
   githubAutoRestore();
 })();
