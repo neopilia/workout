@@ -332,7 +332,7 @@ function exRefSets(name){
   return found||[{w:20,r:10}];
 }
 
-var APP_BUILD="20261102-2";
+var APP_BUILD="20261102-3";
 
 var state={
   tab:"log",prevTab:"log",routine:loadR(),logs:loadL(),
@@ -1154,14 +1154,14 @@ async function githubBackup(showSuccess){
 }
 
 async function fetchRoutineFromGithub(){
-  if(Object.keys(state.routine).length>0)return;
   var baseUrl="https://raw.githubusercontent.com/neopilia/workout/main/";
   var url=userId==="default"?baseUrl+"data/routine.json?t=":baseUrl+"data/routine_"+userId+".json?t=";
   try{
     var res=await fetch(url+Date.now());
     if(!res.ok&&userId!=="default")res=await fetch(baseUrl+"data/routine.json?t="+Date.now());
     if(!res.ok){
-      // 최종 폴백: suggested_routine
+      if(Object.keys(state.routine).length>0)return;
+      // 폴백: suggested_routine (신규 사용자)
       var su=userId==="default"?baseUrl+"data/suggested_routine.json?t=":baseUrl+"data/suggested_routine_"+userId+".json?t=";
       res=await fetch(su+Date.now());
       if(!res.ok)return;
@@ -1170,10 +1170,14 @@ async function fetchRoutineFromGithub(){
     var keys=Object.keys(d).filter(function(k){return!k.startsWith("_");});
     if(!keys.length)return;
     var cleanR={};keys.forEach(function(k){cleanR[k]=d[k];});
+    var ghHash=JSON.stringify(cleanR);
+    var localHash=JSON.stringify(state.routine);
+    if(ghHash===localHash)return; // 동일하면 skip
     state.routine=migrateRoutineFormat(migrateTreadmill(cleanR));
-    saveR(state.routine);
+    // saveR 호출 시 GitHub에 다시 push되는 루프 방지: localStorage만 갱신
+    try{localStorage.setItem(RK,JSON.stringify(state.routine));}catch(e){}
     render();
-    showToast("루틴을 불러왔습니다 ✓");
+    if(Object.keys(state.routine).length>0)showToast("루틴이 동기화됐습니다 ✓");
   }catch(e){}
 }
 
