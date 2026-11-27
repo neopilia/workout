@@ -11693,7 +11693,7 @@
           ]
         },
         {
-          "name": "Lat Pull Down",
+          "name": "Row",
           "sets": [
             {
               "w": 25,
@@ -11714,7 +11714,7 @@
           ]
         },
         {
-          "name": "Row",
+          "name": "Lat Pull Down",
           "sets": [
             {
               "w": 25,
